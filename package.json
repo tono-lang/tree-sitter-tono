@@ -1,0 +1,6 @@
+{
+  "name": "tree-sitter-tono",
+  "version": "0.0.0",
+  "license": "MIT",
+  "main": "bindings/node"
+}

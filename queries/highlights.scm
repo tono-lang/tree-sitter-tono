@@ -1,0 +1,2 @@
+; highlights (placeholder)
+(comment) @comment
