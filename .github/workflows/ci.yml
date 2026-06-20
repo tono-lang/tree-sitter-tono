@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  grammar:
+    name: Grammar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install tree-sitter CLI
+        run: npm install -g tree-sitter-cli
+      - name: Generate
+        run: tree-sitter generate
+      - name: Test
+        run: tree-sitter test
+
+  ci-success:
+    name: CI success
+    runs-on: ubuntu-latest
+    needs: [grammar]
+    if: always()
+    steps:
+      - run: |
+          [ "${{ needs.grammar.result }}" = "success" ] || { echo "grammar job failed"; exit 1; }
+          echo "ok"
