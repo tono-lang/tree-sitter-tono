@@ -1,0 +1,19 @@
+import payments.common as common
+// <- keyword.import
+//      ^ module
+//                      ^ keyword.import
+
+struct charge {
+  status: common.status
+//        ^ module
+//               ^ type
+}
+
+ext hook before_request {
+// <- keyword
+//  ^ keyword
+//       ^ function
+  ts: "ext/ts/auth.ts#addBearer"
+//^ property
+//    ^ string
+}

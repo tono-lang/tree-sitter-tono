@@ -23,7 +23,7 @@ function commaSep1(rule) {
 // traits written before the keyword, then an optional `pub`.
 const modifiers = ($) => [repeat($.trait), optional($.visibility)];
 
-module.exports = grammar({
+export default grammar({
   name: 'tono',
 
   word: ($) => $.identifier,
@@ -35,10 +35,28 @@ module.exports = grammar({
 
     _definition: ($) =>
       choice(
+        $.import_declaration,
         $.struct_declaration,
         $.enum_declaration,
         $.union_declaration,
         $.operation_declaration,
+        $.extension_declaration,
+      ),
+
+    // ── Imports ─────────────────────────────────────────────────────────
+
+    // import ::= "import" segment ("." segment)* ( "as" alias )?
+    import_declaration: ($) =>
+      seq(
+        'import',
+        field('path', $.module_path),
+        optional(seq('as', field('alias', $.identifier))),
+      ),
+
+    module_path: ($) =>
+      seq(
+        alias($.identifier, $.module_segment),
+        repeat(seq('.', alias($.identifier, $.module_segment))),
       ),
 
     // ── Declarations ────────────────────────────────────────────────────
@@ -91,6 +109,33 @@ module.exports = grammar({
         ),
       ),
 
+    // ext ::= trait* "pub"? "ext" kind name signature? "{" binding* "}"
+    // The kind word (hook | contract | constraint) is a contextual identifier,
+    // not a reserved keyword, so it stays usable as an ordinary name elsewhere.
+    extension_declaration: ($) =>
+      seq(
+        ...modifiers($),
+        'ext',
+        field('kind', alias($.identifier, $.extension_kind)),
+        field('name', $.identifier),
+        optional($.extension_signature),
+        field('body', $.extension_body),
+      ),
+
+    // signature ::= "(" type ")" "->" type
+    extension_signature: ($) =>
+      seq('(', field('input', $._type), ')', '->', field('output', $._type)),
+
+    extension_body: ($) => seq('{', repeat($.extension_binding), '}'),
+
+    // binding ::= key ":" string, where key is a language tag or "conformance".
+    extension_binding: ($) =>
+      seq(
+        field('key', $.identifier),
+        ':',
+        field('value', choice($.string, $.multiline_string)),
+      ),
+
     visibility: ($) => 'pub',
 
     // generics ::= "[" name ("," name)* "]"
@@ -134,7 +179,7 @@ module.exports = grammar({
 
     // ── Types ───────────────────────────────────────────────────────────
 
-    // type ::= base "?"?  — the "?" binds to the whole preceding base type.
+    // type ::= base "?"? (the "?" binds to the whole preceding base type).
     _type: ($) => seq($._base_type, optional($.nullable)),
 
     nullable: ($) => '?',
@@ -142,10 +187,10 @@ module.exports = grammar({
     _base_type: ($) =>
       choice($.primitive_type, $.list_type, $.map_type, $.named_type),
 
-    // []T  — the element is a base type; a trailing "?" binds to the list.
+    // []T, where the element is a base type; a trailing "?" binds to the list.
     list_type: ($) => seq('[', ']', field('element', $._base_type)),
 
-    // map[K]V — the key is a full type, the value a base type.
+    // map[K]V, where the key is a full type and the value a base type.
     map_type: ($) =>
       seq(
         'map',
@@ -155,11 +200,19 @@ module.exports = grammar({
         field('value', $._base_type),
       ),
 
-    // Name, or Name[args] generic application.
+    // Name, qualifier.Name, or either with a [args] generic application.
     named_type: ($) =>
+      seq($._type_name, optional($.type_arguments)),
+
+    _type_name: ($) =>
+      choice(alias($.identifier, $.type_identifier), $.qualified_type),
+
+    // A cross-module reference: the qualifier is an import alias or module name.
+    qualified_type: ($) =>
       seq(
+        field('module', alias($.identifier, $.module_qualifier)),
+        '.',
         alias($.identifier, $.type_identifier),
-        optional($.type_arguments),
       ),
 
     type_arguments: ($) => seq('[', commaSep1($._type), ']'),
