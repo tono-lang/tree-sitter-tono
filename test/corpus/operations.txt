@@ -1,0 +1,82 @@
+================================================================================
+Operation with no input and no output
+================================================================================
+
+op ping()
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (operation_declaration
+    (identifier)))
+
+================================================================================
+Operation with input and output
+================================================================================
+
+op create_charge(charge): charge
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (operation_declaration
+    (identifier)
+    (named_type
+      (type_identifier))
+    (named_type
+      (type_identifier))))
+
+================================================================================
+Operation with trailing traits
+================================================================================
+
+op create_charge(charge): charge
+  @http(method: "POST", path: "/charges")
+  @errors(card_declined, not_found)
+  @async
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (operation_declaration
+    (identifier)
+    (named_type
+      (type_identifier))
+    (named_type
+      (type_identifier))
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (key_value
+            (identifier)
+            (string)))
+        (trait_argument
+          (key_value
+            (identifier)
+            (string)))))
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (identifier))
+        (trait_argument
+          (identifier))))
+    (trait
+      (trait_name))))
+
+================================================================================
+Operation with nullable output
+================================================================================
+
+op find(uuid): charge?
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (operation_declaration
+    (identifier)
+    (primitive_type)
+    (named_type
+      (type_identifier))
+    (nullable)))

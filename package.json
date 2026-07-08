@@ -1,6 +1,31 @@
 {
   "name": "tree-sitter-tono",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Tono grammar for tree-sitter: highlight-only, kept in sync with the frontend parser",
+  "repository": "https://github.com/tono-lang/tree-sitter-tono",
   "license": "MIT",
-  "main": "bindings/node"
+  "author": "gandarfh <joao@httui.com>",
+  "keywords": [
+    "tree-sitter",
+    "parser",
+    "tono"
+  ],
+  "files": [
+    "grammar.js",
+    "tree-sitter.json",
+    "queries/*",
+    "src/**"
+  ],
+  "tree-sitter": [
+    {
+      "scope": "source.tono",
+      "file-types": [
+        "tono"
+      ],
+      "highlights": [
+        "queries/highlights.scm"
+      ],
+      "injection-regex": "^tono$"
+    }
+  ]
 }

@@ -1,0 +1,179 @@
+================================================================================
+Empty struct
+================================================================================
+
+struct empty {}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body)))
+
+================================================================================
+Struct with primitive and named fields
+================================================================================
+
+struct charge {
+  id: uuid
+  amount: i64
+  status: status
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type))
+      (member
+        (identifier)
+        (primitive_type))
+      (member
+        (identifier)
+        (named_type
+          (type_identifier))))))
+
+================================================================================
+Nullable, list, and map field types
+================================================================================
+
+struct bag {
+  note: string?
+  tags: []string
+  metadata: map[string]string
+  matrix: [][]i32
+  optional_list: []string?
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (nullable))
+      (member
+        (identifier)
+        (list_type
+          (primitive_type)))
+      (member
+        (identifier)
+        (map_type
+          (primitive_type)
+          (primitive_type)))
+      (member
+        (identifier)
+        (list_type
+          (list_type
+            (primitive_type))))
+      (member
+        (identifier)
+        (list_type
+          (primitive_type))
+        (nullable)))))
+
+================================================================================
+Generic type application
+================================================================================
+
+struct page {
+  items: list[charge]
+  pair: either[string, i64]
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (named_type
+          (type_identifier)
+          (type_arguments
+            (named_type
+              (type_identifier)))))
+      (member
+        (identifier)
+        (named_type
+          (type_identifier)
+          (type_arguments
+            (primitive_type)
+            (primitive_type)))))))
+
+================================================================================
+Generic struct with type parameters
+================================================================================
+
+struct envelope[T] {
+  data: T
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (type_parameters
+      (type_parameter))
+    (struct_body
+      (member
+        (identifier)
+        (named_type
+          (type_identifier))))))
+
+================================================================================
+Public struct with leading traits and field traits
+================================================================================
+
+@doc("A charge.")
+pub struct charge {
+  amount: i64 @range(min: 0)
+  currency: string @length(min: 3, max: 3)
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (integer))))))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (integer)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (integer)))))))))
