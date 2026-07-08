@@ -292,7 +292,7 @@
         "required": true,
         "types": [
           {
-            "type": "float",
+            "type": "float_literal",
             "named": true
           },
           {
@@ -745,7 +745,7 @@
       "required": true,
       "types": [
         {
-          "type": "float",
+          "type": "float_literal",
           "named": true
         },
         {
@@ -1048,7 +1048,7 @@
     "named": false
   },
   {
-    "type": "float",
+    "type": "float_literal",
     "named": true
   },
   {

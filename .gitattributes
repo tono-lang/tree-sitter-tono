@@ -13,10 +13,8 @@ Makefile linguist-generated
 # Rust bindings
 bindings/rust/* linguist-generated
 Cargo.toml linguist-generated
-Cargo.lock linguist-generated
 
 # Node.js bindings
 bindings/node/* linguist-generated
 binding.gyp linguist-generated
 package.json linguist-generated
-package-lock.json linguist-generated

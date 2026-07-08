@@ -4,9 +4,14 @@ tree-sitter grammar for `.tono`: highlighting and incremental parsing in editors
 (Neovim, Zed, Helix) and on GitHub.
 
 This is a highlight-only grammar. The source of truth for the accepted surface is
-the frontend's hand-written recursive-descent parser; this grammar mirrors it so
+the frontend's hand-written recursive-descent parser; this grammar tracks it so
 editors get fast, incremental highlighting without depending on the compiler.
 When the parser's surface changes, update `grammar.js` and the corpus to match.
+
+The grammar is a deliberate superset: it already recognizes modules (`import`,
+qualified type references) and extensions (`ext`), which live in in-progress
+frontend work and are not yet accepted by the released parser. Highlighting a
+slightly broader surface is intentional; it never rejects valid `.tono`.
 
 ## Layout
 

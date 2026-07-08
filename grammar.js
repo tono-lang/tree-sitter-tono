@@ -144,7 +144,9 @@ export default grammar({
 
     // ── Bodies ──────────────────────────────────────────────────────────
 
-    struct_body: ($) => seq('{', repeat($.member), '}'),
+    // Members are whitespace-separated; stray commas between them are tolerated
+    // to match the hand-written parser, which skips commas in a shape body.
+    struct_body: ($) => seq('{', repeat(choice($.member, ',')), '}'),
 
     // member ::= name ":" type trait*
     member: ($) =>
@@ -256,7 +258,13 @@ export default grammar({
       seq(field('key', $.identifier), ':', field('value', $._trait_value)),
 
     _trait_value: ($) =>
-      choice($.string, $.multiline_string, $.integer, $.float, $.identifier),
+      choice(
+        $.string,
+        $.multiline_string,
+        $.integer,
+        $.float_literal,
+        $.identifier,
+      ),
 
     // ── Literals and lexical ────────────────────────────────────────────
 
@@ -273,7 +281,9 @@ export default grammar({
 
     integer: ($) => /-?\d+/,
 
-    float: ($) => /-?\d+\.\d+/,
+    // Named "float_literal" to avoid colliding with the "float" primitive_type
+    // keyword, which would otherwise produce two node types both named "float".
+    float_literal: ($) => /-?\d+\.\d+/,
 
     identifier: ($) => /[A-Za-z_][A-Za-z0-9_]*/,
 

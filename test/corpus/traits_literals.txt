@@ -62,7 +62,7 @@ struct thing {
         (trait_argument
           (key_value
             (identifier)
-            (float)))))
+            (float_literal)))))
     (identifier)
     (struct_body
       (member

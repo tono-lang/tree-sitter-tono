@@ -53,7 +53,7 @@
 (multiline_string) @string
 (escape_sequence) @string.escape
 (integer) @number
-(float) @number.float
+(float_literal) @number.float
 
 ; Comments
 (comment) @comment @spell
