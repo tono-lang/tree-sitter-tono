@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Tono grammar for tree-sitter: highlight-only, kept in sync with the frontend parser",
   "repository": "https://github.com/tono-lang/tree-sitter-tono",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "gandarfh <joao@httui.com>",
   "type": "module",
   "main": "bindings/node",

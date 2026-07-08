@@ -21,7 +21,7 @@ jobs:
           npx --yes jscpd .
           --threshold 3
           --reporters consoleFull
-          --ignore "**/target/**,**/_build/**,**/node_modules/**,**/dist/**,**/*.lock,src/parser.c,src/grammar.json,src/node-types.json"
+          --ignore "**/target/**,**/_build/**,**/node_modules/**,**/dist/**,**/*.lock,src/parser.c,src/grammar.json,src/node-types.json,test/corpus/**,test/highlight/**"
 
   file-size:
     name: File size
