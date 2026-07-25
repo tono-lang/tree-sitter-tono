@@ -1,0 +1,20 @@
+@doc("point")
+// <- attribute
+// ^ attribute
+struct point {
+// <- keyword
+//     ^ type.definition
+  x: i32
+//^ property
+//   ^ type.builtin
+  label: string?
+//             ^ punctuation.special
+}
+
+enum status { active }
+// <- keyword
+//            ^ constant
+
+op ping()
+// <- keyword
+// ^ function

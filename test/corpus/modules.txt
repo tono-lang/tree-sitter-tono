@@ -1,0 +1,83 @@
+================================================================================
+Simple import
+================================================================================
+
+import payments.common
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (import_declaration
+    (module_path
+      (module_segment)
+      (module_segment))))
+
+================================================================================
+Dotted import path with alias
+================================================================================
+
+import payments.common.types as common
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (import_declaration
+    (module_path
+      (module_segment)
+      (module_segment)
+      (module_segment))
+    (identifier)))
+
+================================================================================
+Qualified type reference
+================================================================================
+
+struct charge {
+  status: common.status
+  method: common.payment_method
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (named_type
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))))
+      (member
+        (identifier)
+        (named_type
+          (qualified_type
+            (module_qualifier)
+            (type_identifier)))))))
+
+================================================================================
+Qualified generic type
+================================================================================
+
+struct page {
+  items: common.list[common.charge]
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (named_type
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))
+          (type_arguments
+            (named_type
+              (qualified_type
+                (module_qualifier)
+                (type_identifier)))))))))

@@ -1,0 +1,91 @@
+================================================================================
+Extension hook with a binding
+================================================================================
+
+ext hook before_request {
+  ts: "ext/ts/auth.ts#addBearer"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (identifier)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string)))))
+
+================================================================================
+Extension hook with signature
+================================================================================
+
+ext hook sign(request) -> request {
+  ts: "ext/ts/sign.ts#sign"
+  go: "ext/go/sign.go#Sign"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (identifier)
+    (extension_signature
+      (named_type
+        (type_identifier))
+      (named_type
+        (type_identifier)))
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string))
+      (extension_binding
+        (identifier)
+        (string)))))
+
+================================================================================
+Extension contract with conformance
+================================================================================
+
+ext contract pager {
+  conformance: "conformance/pager.json"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (identifier)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string)))))
+
+================================================================================
+Public extension with leading trait
+================================================================================
+
+@doc("bespoke bound")
+pub ext constraint non_empty {
+  ts: "ext/ts/non_empty.ts#check"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (visibility)
+    (extension_kind)
+    (identifier)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string)))))

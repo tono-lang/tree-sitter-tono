@@ -1,0 +1,117 @@
+================================================================================
+Plain enum
+================================================================================
+
+enum status { active, settled, refunded }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    (identifier)
+    (enum_body
+      (enum_case
+        (identifier))
+      (enum_case
+        (identifier))
+      (enum_case
+        (identifier)))))
+
+================================================================================
+Int-backed enum
+================================================================================
+
+enum http_code { ok = 200, not_found = 404, error = 500 }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    (identifier)
+    (enum_body
+      (enum_case
+        (identifier)
+        (integer))
+      (enum_case
+        (identifier)
+        (integer))
+      (enum_case
+        (identifier)
+        (integer)))))
+
+================================================================================
+Enum case with trait
+================================================================================
+
+enum status {
+  active,
+  settled @doc("done")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    (identifier)
+    (enum_body
+      (enum_case
+        (identifier))
+      (enum_case
+        (identifier)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))
+
+================================================================================
+Union with payloads
+================================================================================
+
+union payment_method { card(card), bank(bank_account) }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (union_declaration
+    (identifier)
+    (union_body
+      (variant
+        (identifier)
+        (variant_payload
+          (named_type
+            (type_identifier))))
+      (variant
+        (identifier)
+        (variant_payload
+          (named_type
+            (type_identifier)))))))
+
+================================================================================
+Union with discriminator trait and bare variant
+================================================================================
+
+@discriminator("kind")
+union result {
+  ok(charge),
+  pending
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (union_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (identifier)
+    (union_body
+      (variant
+        (identifier)
+        (variant_payload
+          (named_type
+            (type_identifier))))
+      (variant
+        (identifier)))))

@@ -1,0 +1,148 @@
+================================================================================
+Trait with no arguments
+================================================================================
+
+@retryable
+struct card_declined {
+  message: string
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (trait
+      (trait_name))
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+Trait with mixed argument kinds
+================================================================================
+
+@status(402)
+@errorCode("card_declined")
+@range(min: 0, max: 10)
+@ratio(factor: 1.5)
+struct thing {
+  x: i32
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (integer))))
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (key_value
+            (identifier)
+            (integer)))
+        (trait_argument
+          (key_value
+            (identifier)
+            (integer)))))
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (key_value
+            (identifier)
+            (float_literal)))))
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+String escapes
+================================================================================
+
+@doc("line one\nline two\t\"quoted\"")
+struct doc {
+  x: i32
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string
+            (escape_sequence)
+            (escape_sequence)
+            (escape_sequence)
+            (escape_sequence)))))
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+Triple-quoted multiline string
+================================================================================
+
+@doc("""
+A multi-line
+description.
+""")
+struct doc {
+  x: i32
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (multiline_string))))
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+Line comments
+================================================================================
+
+// a leading comment
+struct thing {
+  // a field comment
+  x: i32 // trailing
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment)
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (comment)
+      (member
+        (identifier)
+        (primitive_type))
+      (comment))))

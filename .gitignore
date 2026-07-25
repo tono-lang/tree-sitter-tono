@@ -1,6 +1,12 @@
 node_modules/
 build/
+target/
+prebuilds/
+Cargo.lock
+package-lock.json
 *.so
 *.dylib
+*.dll
 *.wasm
+*.node
 .DS_Store
