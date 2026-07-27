@@ -1,0 +1,46 @@
+pub struct client {
+  client_key: string @arg @str::trim
+//^ property
+//            ^ type.builtin
+//                    ^ attribute
+//                         ^ attribute
+  endpoint_env: string @format("ENDPOINT_{.client_key}")
+//                              ^ string
+//                                       ^ string.special
+  endpoint: string = match .endpoint_version {
+//                   ^ keyword.conditional
+//                          ^ property
+    "v1" => .endpoint_v1
+//       ^ operator
+//           ^ property
+    _ => @env("FALLBACK")
+//  ^ character.special
+//        ^ attribute
+  }
+
+  settings: config
+    @bind(api_key, .api_key)
+//   ^ attribute
+//                 ^ punctuation.delimiter
+//                  ^ property
+
+  op fetch_note(note_ref): note
+//^ keyword
+//   ^ function
+//              ^ type
+    @http(method: "GET", path: "/notes/{id}", endpoint: .endpoint)
+//   ^ attribute
+//        ^ property
+//                                     ^ string.special
+//                                                       ^ property
+}
+
+ext impl client.fetch_note raw {
+//  ^ keyword
+//       ^ type
+//              ^ function
+//                         ^ keyword
+  go: "ext/go/notes.go#Fetch"
+//^ property
+//     ^ string
+}

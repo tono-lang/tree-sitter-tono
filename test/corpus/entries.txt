@@ -1,0 +1,323 @@
+================================================================================
+Struct with operations in its body is an entry
+================================================================================
+
+pub struct client {
+  api_key: string @arg
+
+  op save_note(note): note
+    @http(method: "POST", path: "/notes", endpoint: .endpoint)
+    @errors(overloaded)
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)))
+      (operation_declaration
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (field_reference
+                  (field_name))))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))))))))
+
+================================================================================
+Stacked value sources and catalog transforms
+================================================================================
+
+struct client {
+  client_name: string @arg @str::trim
+  client_key: string @format("{.client_name}") @str::upper_snake
+  endpoint: string @env(.endpoint_env) @env("ENDPOINT") @default("https://x")
+  timeout: duration @with @default("10s")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name))
+        (trait
+          (trait_name)))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string
+                (field_placeholder)))))
+        (trait
+          (trait_name)))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (field_reference
+                (field_name)))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))
+
+================================================================================
+Field selected by a match table
+================================================================================
+
+struct client {
+  endpoint: string = match .endpoint_version {
+    "v1" => .endpoint_v1
+    2 => .endpoint_v2
+    _ => @env("FALLBACK") @default("https://x")
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (match_expression
+          (match_keyword)
+          (field_reference
+            (field_name))
+          (match_body
+            (match_arm
+              (string)
+              (field_reference
+                (field_name)))
+            (match_arm
+              (integer)
+              (field_reference
+                (field_name)))
+            (match_arm
+              (match_pattern_name)
+              (trait
+                (trait_name)
+                (trait_arguments
+                  (trait_argument
+                    (string))))
+              (trait
+                (trait_name)
+                (trait_arguments
+                  (trait_argument
+                    (string)))))))))))
+
+================================================================================
+Composed config bound at the composition point
+================================================================================
+
+struct client {
+  api_key: string @with
+
+  settings: config
+    @bind(api_key, .api_key)
+    @header("Authorization", .creds.token)
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)))
+      (member
+        (identifier)
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))
+            (trait_argument
+              (field_reference
+                (field_name)))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))
+            (trait_argument
+              (field_reference
+                (field_name)
+                (field_name)))))))))
+
+================================================================================
+Bespoke implementation of an entry operation
+================================================================================
+
+ext impl save_note {
+  go: "ext/go/notes.go#StoreSave"
+  conformance: "vectors/save_note.json"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (identifier)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string))
+      (extension_binding
+        (identifier)
+        (string)))))
+
+================================================================================
+Raw implementation qualified by its entry
+================================================================================
+
+ext impl client.archive_note raw {
+  ts: "ext/ts/notes.ts#storeArchive"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (qualified_operation
+      (entry_name)
+      (identifier))
+    (extension_raw)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string)))))
+
+================================================================================
+Template placeholders carry two scopes
+================================================================================
+
+struct client {
+  op fetch(note_ref): note
+    @http(method: "GET", path: "/notes/{id}/v{version}", endpoint: .endpoint)
+    @format("ENDPOINT_{.client_key}_V2")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (operation_declaration
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (string
+                  (input_placeholder)
+                  (input_placeholder))))
+            (trait_argument
+              (key_value
+                (identifier)
+                (field_reference
+                  (field_name))))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string
+                (field_placeholder)))))))))
+
+================================================================================
+A brace that opens no placeholder is ordinary string content
+================================================================================
+
+struct s {
+  x: string @doc("a { brace and a {0} index")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))
