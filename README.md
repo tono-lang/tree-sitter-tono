@@ -23,6 +23,60 @@ slightly broader surface is intentional; it never rejects valid `.tono`.
 - `test/corpus/`: parse tests (input plus expected syntax tree).
 - `test/highlight/`: highlight assertions.
 
+## Editor setup
+
+### Neovim
+
+Neovim does not know the `.tono` extension and does not ship this grammar, so
+two things are needed: a filetype rule and the parser itself.
+
+With [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)
+(`main` branch), register the parser and map the extension:
+
+```lua
+vim.api.nvim_create_autocmd("User", {
+  pattern = "TSUpdate",
+  callback = function()
+    require("nvim-treesitter.parsers").tono = {
+      install_info = {
+        url = "https://github.com/tono-lang/tree-sitter-tono",
+        queries = "queries",
+      },
+    }
+  end,
+})
+
+vim.filetype.add({ extension = { tono = "tono" } })
+```
+
+Then `:TSInstall tono`. Highlighting is not automatic: start it per filetype,
+either in `ftplugin/tono.lua` or with an autocommand.
+
+```lua
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "tono",
+  callback = function() vim.treesitter.start() end,
+})
+```
+
+Without nvim-treesitter, build the parser yourself and drop both halves
+anywhere on the `runtimepath`: the shared library at `parser/tono.so` and the
+queries at `queries/tono/highlights.scm`.
+
+```sh
+cc -o ~/.config/nvim/parser/tono.so -shared -Isrc src/parser.c -Os -fPIC
+cp queries/highlights.scm ~/.config/nvim/queries/tono/highlights.scm
+```
+
+The filetype rule and `vim.treesitter.start()` are still required either way.
+
+### Other editors
+
+Only `queries/highlights.scm` exists, so highlighting works everywhere but
+indentation, folding and text objects do not. Helix and Zed read
+`tree-sitter.json`, which already declares the grammar name, the `.tono` file
+type and the query path.
+
 ## Publishing
 
 Bump the version first, then tag:
@@ -44,10 +98,20 @@ and the Node (npm) and Rust (crates.io) bindings automatically, via the shared
 workflows. This repo's `NPM_TOKEN` and `CARGO_REGISTRY_TOKEN` secrets must be
 configured for the npm/crates.io jobs to succeed.
 
+## Using the grammar from code
+
+To parse `.tono` programmatically rather than highlight it in an editor:
+
+```sh
+npm install tree-sitter-tono   # Node, prebuilt binaries, no toolchain needed
+cargo add tree-sitter-tono     # Rust
+```
+
 ## Update
 
 - npm: `npm update tree-sitter-tono`
 - Cargo: `cargo update -p tree-sitter-tono`
+- Neovim: `:TSUpdate tono`
 
 ## Development
 
