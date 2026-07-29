@@ -23,6 +23,20 @@ slightly broader surface is intentional; it never rejects valid `.tono`.
 - `test/corpus/`: parse tests (input plus expected syntax tree).
 - `test/highlight/`: highlight assertions.
 
+## Publishing
+
+Pushing a tag (`git tag vX.Y.Z && git push --tags`) runs
+`.github/workflows/release.yml`, which publishes a GitHub Release and the
+Node (npm) and Rust (crates.io) bindings automatically, via the shared
+[tree-sitter/workflows](https://github.com/tree-sitter/workflows) reusable
+workflows. This repo's `NPM_TOKEN` and `CARGO_REGISTRY_TOKEN` secrets must be
+configured for the npm/crates.io jobs to succeed.
+
+## Update
+
+- npm: `npm update tree-sitter-tono`
+- Cargo: `cargo update -p tree-sitter-tono`
+
 ## Development
 
 Requires the [tree-sitter CLI](https://tree-sitter.github.io/tree-sitter/).
