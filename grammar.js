@@ -95,10 +95,14 @@ export default grammar({
     // op ::= trait* "pub"? "op" name "(" type? ")" ( ":" type )? trait*
     // Trailing traits bind greedily to the operation (mirrors the hand-written
     // parser), so a "@" after the signature never starts the next declaration.
-    operation_declaration: ($) =>
+    operation_declaration: ($) => seq(...modifiers($), $._operation_core),
+
+    // The signature and its trailing traits, without the leading modifiers: an
+    // operation inside an entry body takes neither traits above it nor "pub",
+    // because a trait written there belongs to the item before it.
+    _operation_core: ($) =>
       prec.right(
         seq(
-          ...modifiers($),
           'op',
           field('name', $.identifier),
           '(',
@@ -109,17 +113,27 @@ export default grammar({
         ),
       ),
 
-    // ext ::= trait* "pub"? "ext" kind name signature? "{" binding* "}"
-    // The kind word (hook | contract | constraint) is a contextual identifier,
-    // not a reserved keyword, so it stays usable as an ordinary name elsewhere.
+    // ext ::= trait* "pub"? "ext" kind name "raw"? signature? "{" binding* "}"
+    // The kind word (hook | contract | constraint | impl) and the "raw" marker
+    // are contextual identifiers, not reserved keywords, so they stay usable as
+    // ordinary names elsewhere. An impl names the operation it implements, and
+    // spells it "entry.op" when two entries share an operation name.
     extension_declaration: ($) =>
       seq(
         ...modifiers($),
         'ext',
         field('kind', alias($.identifier, $.extension_kind)),
-        field('name', $.identifier),
+        field('name', choice($.identifier, $.qualified_operation)),
+        optional(field('raw', alias($.identifier, $.extension_raw))),
         optional($.extension_signature),
         field('body', $.extension_body),
+      ),
+
+    qualified_operation: ($) =>
+      seq(
+        field('entry', alias($.identifier, $.entry_name)),
+        '.',
+        field('operation', $.identifier),
       ),
 
     // signature ::= "(" type ")" "->" type
@@ -146,16 +160,53 @@ export default grammar({
 
     // Members are whitespace-separated; stray commas between them are tolerated
     // to match the hand-written parser, which skips commas in a shape body.
-    struct_body: ($) => seq('{', repeat(choice($.member, ',')), '}'),
+    // A struct that declares operations in its body is an entry: the role comes
+    // from the content, not from a keyword.
+    struct_body: ($) =>
+      seq(
+        '{',
+        repeat(
+          choice($.member, alias($._operation_core, $.operation_declaration), ','),
+        ),
+        '}',
+      ),
 
-    // member ::= name ":" type trait*
+    // member ::= name ":" type ("=" match)? trait*
     member: ($) =>
       seq(
         field('name', $.identifier),
         ':',
         field('type', $._type),
+        optional(seq('=', field('value', $.match_expression))),
         repeat($.trait),
       ),
+
+    // match ::= "match" ref "{" (pattern "=>" value)* "}" — the selection table
+    // of an entry or config field. "match" is a contextual identifier for the
+    // same reason the extension kind is: the lexer does not reserve it.
+    match_expression: ($) =>
+      seq(
+        alias($.identifier, $.match_keyword),
+        field('subject', $.field_reference),
+        field('body', $.match_body),
+      ),
+
+    match_body: ($) => seq('{', repeat(choice($.match_arm, ',')), '}'),
+
+    // arm ::= pattern "=>" (ref | literal | source traits)
+    match_arm: ($) =>
+      seq(field('pattern', $._match_pattern), '=>', field('value', $._match_value)),
+
+    _match_pattern: ($) =>
+      choice($.string, $.integer, alias($.identifier, $.match_pattern_name)),
+
+    _match_value: ($) =>
+      choice($.field_reference, $.string, $.integer, $.identifier, repeat1($.trait)),
+
+    // ref ::= "." name ("." name)* — a field reference, possibly a path into a
+    // structured field.
+    field_reference: ($) =>
+      seq('.', alias($.identifier, $.field_name), repeat(seq('.', alias($.identifier, $.field_name)))),
 
     enum_body: ($) => seq('{', commaSep($.enum_case), '}'),
 
@@ -241,13 +292,15 @@ export default grammar({
 
     // ── Traits ──────────────────────────────────────────────────────────
 
-    // trait ::= "@" name ( "(" arg ("," arg)* ")" )?
+    // trait ::= "@" name ("::" name)* ( "(" arg ("," arg)* ")" )?
+    // The "::" segments name a builtin catalog entry (e.g. @str::trim). The
+    // frontend keeps the separator inside the trait id, so the whole path is one
+    // token here too.
     trait: ($) =>
-      seq(
-        '@',
-        field('name', alias(choice($.identifier, $.primitive_type), $.trait_name)),
-        optional($.trait_arguments),
-      ),
+      seq('@', field('name', $.trait_name), optional($.trait_arguments)),
+
+    trait_name: ($) =>
+      token(seq(/[A-Za-z_][A-Za-z0-9_]*/, repeat(seq('::', /[A-Za-z_][A-Za-z0-9_]*/)))),
 
     trait_arguments: ($) => seq('(', commaSep($.trait_argument), ')'),
 
@@ -257,6 +310,9 @@ export default grammar({
     key_value: ($) =>
       seq(field('key', $.identifier), ':', field('value', $._trait_value)),
 
+    // A value position accepts a literal, a field reference, or (inside a
+    // string) a template of references: the rule belongs to the language, not
+    // to any single trait.
     _trait_value: ($) =>
       choice(
         $.string,
@@ -264,14 +320,38 @@ export default grammar({
         $.integer,
         $.float_literal,
         $.identifier,
+        $.field_reference,
       ),
 
     // ── Literals and lexical ────────────────────────────────────────────
 
     string: ($) =>
-      seq('"', repeat(choice($._string_content, $.escape_sequence)), '"'),
+      seq(
+        '"',
+        repeat(
+          choice(
+            $._string_content,
+            $.escape_sequence,
+            $.field_placeholder,
+            $.input_placeholder,
+          ),
+        ),
+        '"',
+      ),
 
-    _string_content: ($) => token.immediate(prec(1, /[^"\\\n]+/)),
+    // "{.field}" resolves against the entry at construction; "{member}" against
+    // the operation input on each call. Two scopes, one template.
+    field_placeholder: ($) =>
+      token.immediate(
+        prec(2, /\{\.[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*\}/),
+      ),
+
+    input_placeholder: ($) =>
+      token.immediate(prec(2, /\{[A-Za-z_][A-Za-z0-9_]*\}/)),
+
+    // Stops before "{" so a placeholder can start there; a brace that opens no
+    // placeholder is ordinary content.
+    _string_content: ($) => token.immediate(prec(1, /[^"\\\n{]+|\{/)),
 
     escape_sequence: ($) => token.immediate(/\\./),
 

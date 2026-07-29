@@ -166,6 +166,20 @@
           {
             "type": "identifier",
             "named": true
+          },
+          {
+            "type": "qualified_operation",
+            "named": true
+          }
+        ]
+      },
+      "raw": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "extension_raw",
+            "named": true
           }
         ]
       }
@@ -248,6 +262,21 @@
     }
   },
   {
+    "type": "field_reference",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "field_name",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "import_declaration",
     "named": true,
     "fields": {
@@ -291,6 +320,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          },
           {
             "type": "float_literal",
             "named": true
@@ -398,6 +431,107 @@
     }
   },
   {
+    "type": "match_arm",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "match_pattern_name",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "trait",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "match_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "match_arm",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "match_expression",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "match_body",
+            "named": true
+          }
+        ]
+      },
+      "subject": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "match_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "member",
     "named": true,
     "fields": {
@@ -433,6 +567,16 @@
           },
           {
             "type": "primitive_type",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "match_expression",
             "named": true
           }
         ]
@@ -575,6 +719,32 @@
     "fields": {}
   },
   {
+    "type": "qualified_operation",
+    "named": true,
+    "fields": {
+      "entry": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "entry_name",
+            "named": true
+          }
+        ]
+      },
+      "operation": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "qualified_type",
     "named": true,
     "fields": {
@@ -647,6 +817,14 @@
         {
           "type": "escape_sequence",
           "named": true
+        },
+        {
+          "type": "field_placeholder",
+          "named": true
+        },
+        {
+          "type": "input_placeholder",
+          "named": true
         }
       ]
     }
@@ -661,6 +839,10 @@
       "types": [
         {
           "type": "member",
+          "named": true
+        },
+        {
+          "type": "operation_declaration",
           "named": true
         }
       ]
@@ -745,6 +927,10 @@
       "required": true,
       "types": [
         {
+          "type": "field_reference",
+          "named": true
+        },
+        {
           "type": "float_literal",
           "named": true
         },
@@ -785,11 +971,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "trait_name",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "type_arguments",
@@ -991,6 +1172,10 @@
     "named": false
   },
   {
+    "type": "=>",
+    "named": false
+  },
+  {
     "type": "@",
     "named": false
   },
@@ -1028,6 +1213,10 @@
     "named": false
   },
   {
+    "type": "entry_name",
+    "named": true
+  },
+  {
     "type": "enum",
     "named": false
   },
@@ -1041,6 +1230,18 @@
   },
   {
     "type": "extension_kind",
+    "named": true
+  },
+  {
+    "type": "extension_raw",
+    "named": true
+  },
+  {
+    "type": "field_name",
+    "named": true
+  },
+  {
+    "type": "field_placeholder",
     "named": true
   },
   {
@@ -1076,12 +1277,24 @@
     "named": false
   },
   {
+    "type": "input_placeholder",
+    "named": true
+  },
+  {
     "type": "integer",
     "named": true
   },
   {
     "type": "map",
     "named": false
+  },
+  {
+    "type": "match_keyword",
+    "named": true
+  },
+  {
+    "type": "match_pattern_name",
+    "named": true
   },
   {
     "type": "module_qualifier",
@@ -1114,6 +1327,10 @@
   {
     "type": "timestamp",
     "named": false
+  },
+  {
+    "type": "trait_name",
+    "named": true
   },
   {
     "type": "type_identifier",
