@@ -3,7 +3,6 @@ build/
 target/
 prebuilds/
 Cargo.lock
-package-lock.json
 *.so
 *.dylib
 *.dll
