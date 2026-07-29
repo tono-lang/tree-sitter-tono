@@ -25,9 +25,21 @@ slightly broader surface is intentional; it never rejects valid `.tono`.
 
 ## Publishing
 
-Pushing a tag (`git tag vX.Y.Z && git push --tags`) runs
-`.github/workflows/release.yml`, which publishes a GitHub Release and the
-Node (npm) and Rust (crates.io) bindings automatically, via the shared
+Bump the version first, then tag:
+
+```sh
+tree-sitter version X.Y.Z   # updates tree-sitter.json, package.json, Cargo.toml together
+git commit -am "Release vX.Y.Z"
+git tag vX.Y.Z && git push --tags
+```
+
+The bump is not optional. npm and crates.io publish whatever version the
+manifests declare, not what the tag says, so tagging without bumping either
+republishes an existing version (which both registries reject) or ships the
+wrong number.
+
+The tag runs `.github/workflows/release.yml`, which publishes a GitHub Release
+and the Node (npm) and Rust (crates.io) bindings automatically, via the shared
 [tree-sitter/workflows](https://github.com/tree-sitter/workflows) reusable
 workflows. This repo's `NPM_TOKEN` and `CARGO_REGISTRY_TOKEN` secrets must be
 configured for the npm/crates.io jobs to succeed.
