@@ -23,6 +23,15 @@
 ; The selection table reads as a conditional: it is the only branching form.
 (match_keyword) @keyword.conditional
 
+; Test declarations. "test" only exists as a token in top-level position, and
+; "stub"/"expect" only inside a test body, so the same words highlight as
+; ordinary identifiers everywhere else.
+[
+  "test"
+  "stub"
+  "expect"
+] @keyword
+
 ; Declaration names
 (struct_declaration name: (identifier) @type.definition)
 (enum_declaration name: (identifier) @type.definition)
@@ -53,6 +62,27 @@
 
 ((match_pattern_name) @character.special
   (#eq? @character.special "_"))
+
+; Test bindings and their uses read as variables; the pieces of a stub target
+; keep the reading of what they name (the op, the dependency field). The ctor
+; type name is already covered by the type captures below.
+(test_binding name: (identifier) @variable)
+(stub_declaration binding: (identifier) @variable)
+(stub_target binding: (identifier) @variable)
+(stub_target operation: (identifier) @function)
+(stub_target dependency: (identifier) @property)
+(expect_declaration subject: (identifier) @variable)
+(value_path base: (identifier) @variable)
+(call_expression receiver: (identifier) @variable)
+(call_expression function: (identifier) @function.call)
+(constructor_field name: (identifier) @property)
+(field_pattern name: (identifier) @property)
+
+; Pattern marks: "any" is the value wildcard (like the "_" arm), "None" the
+; builtin absence constant, ".." releases the unlisted fields.
+(any_pattern) @character.special
+(none_pattern) @constant.builtin
+(rest_pattern) @punctuation.special
 
 ; Types
 (primitive_type) @type.builtin

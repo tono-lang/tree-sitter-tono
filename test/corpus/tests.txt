@@ -1,0 +1,439 @@
+================================================================================
+Test block with construction, stub, call and expects
+================================================================================
+
+import tono.http
+
+test "the profile decodes as declared" {
+  c: client {}
+  s: stub c.get_user.http: http.response { status: 200, body: "{}" }
+  got: c.get_user(user_ref { username: "octocat" })
+  expect got: user { login: "octocat", id: 583231, bio: None, .. }
+  expect s.requests: [http.request { method: "GET", path: "/users/octocat", .. }]
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (import_declaration
+    (module_path
+      (module_segment)
+      (module_segment)))
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body)))
+      (stub_declaration
+        (identifier)
+        (stub_target
+          (identifier)
+          (identifier)
+          (identifier))
+        (constructor_expression
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (integer))
+            (constructor_field
+              (identifier)
+              (string)))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (string))
+            (field_pattern
+              (identifier)
+              (integer))
+            (field_pattern
+              (identifier)
+              (none_pattern))
+            (rest_pattern))))
+      (expect_declaration
+        (value_path
+          (identifier)
+          (field_name))
+        (list_pattern
+          (constructor_pattern
+            (qualified_type
+              (module_qualifier)
+              (type_identifier))
+            (constructor_pattern_body
+              (field_pattern
+                (identifier)
+                (string))
+              (field_pattern
+                (identifier)
+                (string))
+              (rest_pattern))))))))
+
+================================================================================
+Stub without a binding and a qualified error pattern
+================================================================================
+
+import tono.errors
+
+test "an unknown login surfaces as the generic api error" {
+  c: client {}
+  stub c.get_user.http: http.response { status: 404, body: "x" }
+  got: c.get_user(user_ref { username: "nobody" })
+  expect got: errors.api { status: 404, .. }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (import_declaration
+    (module_path
+      (module_segment)
+      (module_segment)))
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body)))
+      (stub_declaration
+        (stub_target
+          (identifier)
+          (identifier)
+          (identifier))
+        (constructor_expression
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (integer))
+            (constructor_field
+              (identifier)
+              (string)))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (integer))
+            (rest_pattern)))))))
+
+================================================================================
+Stub sequence: a list value replays one response per call
+================================================================================
+
+test "retry consumes the stub sequence" {
+  c: client {}
+  s: stub c.get_user.http: [
+    http.response { status: 503, body: "" },
+    http.response { status: 200, body: "{}" },
+  ]
+  got: c.get_user(user_ref { username: "octocat" })
+  expect got: user { login: any, .. }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body)))
+      (stub_declaration
+        (identifier)
+        (stub_target
+          (identifier)
+          (identifier)
+          (identifier))
+        (list_expression
+          (constructor_expression
+            (qualified_type
+              (module_qualifier)
+              (type_identifier))
+            (constructor_body
+              (constructor_field
+                (identifier)
+                (integer))
+              (constructor_field
+                (identifier)
+                (string))))
+          (constructor_expression
+            (qualified_type
+              (module_qualifier)
+              (type_identifier))
+            (constructor_body
+              (constructor_field
+                (identifier)
+                (integer))
+              (constructor_field
+                (identifier)
+                (string))))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (any_pattern))
+            (rest_pattern)))))))
+
+================================================================================
+Pattern marks: any, None and a lone rest
+================================================================================
+
+test "the live profile keeps its shape" {
+  c: client {}
+  got: c.get_user(user_ref { username: "torvalds" })
+  expect got: user { login: "torvalds", name: any, bio: None, .. }
+  expect c: user { .. }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body)))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (string))
+            (field_pattern
+              (identifier)
+              (any_pattern))
+            (field_pattern
+              (identifier)
+              (none_pattern))
+            (rest_pattern))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (rest_pattern)))))))
+
+================================================================================
+Dataflow between bindings through field access
+================================================================================
+
+test "create then fetch round-trips" {
+  c: client { api_token: "t0" }
+  saved: c.save_note(note { id: "n7", body: "hello" })
+  expect saved: note { id: "n7", .. }
+  fetched: c.fetch_note(note_ref { id: saved.id })
+  expect fetched: note { id: saved.id, updated_at: any }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (string)))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string))
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (string))
+            (rest_pattern))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (value_path
+                    (identifier)
+                    (field_name))))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (value_path
+                (identifier)
+                (field_name)))
+            (field_pattern
+              (identifier)
+              (any_pattern))))))))
+
+================================================================================
+Contract call without a receiver and a bare ok pattern
+================================================================================
+
+test "signing is stable" {
+  sig: sign_request(canonical_request { method: "GET", path: "/x" })
+  expect sig: "v1:abc"
+  expect done: ok
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    (string)
+    (test_body
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string))
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (string))
+      (expect_declaration
+        (identifier)
+        (identifier)))))
+
+================================================================================
+Contextual words stay ordinary identifiers outside a test
+================================================================================
+
+struct stub {
+  expect: string
+  any: i32
+  test: bool
+}
+
+op expect(stub): stub
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type))
+      (member
+        (identifier)
+        (primitive_type))
+      (member
+        (identifier)
+        (primitive_type))))
+  (operation_declaration
+    (identifier)
+    (named_type
+      (type_identifier))
+    (named_type
+      (type_identifier))))
