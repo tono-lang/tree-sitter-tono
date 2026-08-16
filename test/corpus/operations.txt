@@ -80,3 +80,47 @@ op find(uuid): charge?
     (named_type
       (type_identifier))
     (nullable)))
+
+================================================================================
+Named operation parameter
+================================================================================
+
+pub struct client {
+  op fetch_note(ref: note_ref): note
+    @http(method: "GET", path: "/notes/{.ref.id}")
+}
+
+op lookup(id: string): note
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (operation_declaration
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (string
+                  (field_placeholder)))))))))
+  (operation_declaration
+    (identifier)
+    (identifier)
+    (primitive_type)
+    (named_type
+      (type_identifier))))

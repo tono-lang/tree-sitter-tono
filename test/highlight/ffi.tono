@@ -1,0 +1,87 @@
+ext configlib {
+// <- keyword
+//  ^ module
+  go: "github.com/example/configlib"
+//^ property
+//    ^ string
+
+  struct go_config { Host: string, Env: string }
+//^ keyword
+//       ^ type
+//                   ^ property
+//                         ^ type.builtin
+
+  type publisher {
+//^ keyword
+//     ^ type
+    extern send(topic: string): ack {
+//  ^ keyword
+//         ^ function
+//              ^ variable.parameter
+//                              ^ type
+      go {
+//    ^ property
+        call: "Send"(topic)
+//      ^ keyword
+//            ^ string.special
+//                   ^ variable.parameter
+        yields: (err: error, a: go_ack)
+//      ^ keyword
+//               ^ variable
+//                    ^ type.builtin
+//                           ^ variable
+//                              ^ type
+        returns: ack { id: .a.ID }
+//      ^ keyword
+//               ^ type
+//                     ^ property
+//                          ^ property
+        errors: { "ErrBusy" => overloaded }
+//      ^ keyword
+//                ^ string
+//                             ^ type
+        infallible
+//      ^ keyword.modifier
+      }
+      rust {
+        call: "send"(topic)
+        sync
+//      ^ keyword.modifier
+      }
+    }
+  }
+}
+
+pub struct client {
+  config: app_config = configlib.load(.service, .region)
+//^ property
+//                     ^ module
+//                               ^ function.call
+//                                     ^ property
+  op publish(payload: note): ack
+//   ^ function
+    @header("Authorization", auth.sign(.request))
+//                           ^ module
+//                                ^ function.call
+//                                      ^ property
+    impl .bus.send("notes", .payload.body)
+//  ^ keyword
+//        ^ property
+//            ^ function.call
+//                 ^ string
+}
+
+test "stubs" {
+  stub configlib.load: app_config { endpoint: "https://x.test" }
+//^ keyword
+//     ^ module
+//               ^ function
+  stub bus.publisher.send: overloaded { message: "shedding" }
+//     ^ variable
+//         ^ function
+//                   ^ property
+  s: stub c.get.http: http.response { headers: { "content-type": "json", server: "x" }, ok: true }
+//                                                ^ string
+//                                                                        ^ property
+//                                                                                          ^ boolean
+}

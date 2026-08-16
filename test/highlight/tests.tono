@@ -1,0 +1,41 @@
+import tono.http
+//      ^ module
+
+test "an unknown login surfaces as the generic api error" {
+// <- keyword
+//   ^ string
+  c: client {}
+//^ variable
+//   ^ type
+  s: stub c.get_user.http: http.response { status: 404, body: "x" }
+//^ variable
+//   ^ keyword
+//        ^ variable
+//          ^ function
+//                   ^ property
+//                         ^ module
+//                              ^ type
+//                                         ^ property
+  got: c.get_user(user_ref { username: "octocat" })
+//^ variable
+//     ^ variable
+//       ^ function.call
+//                ^ type
+  expect got: user { login: any, bio: None, .. }
+//^ keyword
+//       ^ variable
+//            ^ type
+//                          ^ character.special
+//                                    ^ constant.builtin
+//                                          ^ punctuation.special
+  expect s.requests: [http.request { method: "GET", .. }]
+//       ^ variable
+//         ^ property
+}
+
+struct retry {
+  stub: string
+//^ property
+  expect: i32
+//^ property
+}

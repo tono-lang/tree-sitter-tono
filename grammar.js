@@ -1,6 +1,9 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+import { commaSep, commaSep1, modifiers } from './grammar/common.js';
+import { libraryRules } from './grammar/libraries.js';
+
 // tree-sitter grammar for the Tono interface language.
 //
 // This is a highlight-only grammar kept in sync with the frontend's
@@ -8,20 +11,6 @@
 // editors (Neovim/Zed/Helix) and GitHub can highlight and incrementally
 // parse `.tono` without depending on the compiler. The source of truth for
 // the accepted surface is the OCaml parser, not this file.
-
-/** A comma-separated list of `rule` with an optional trailing comma. */
-function commaSep(rule) {
-  return optional(commaSep1(rule));
-}
-
-/** A non-empty comma-separated list of `rule` with an optional trailing comma. */
-function commaSep1(rule) {
-  return seq(rule, repeat(seq(',', rule)), optional(','));
-}
-
-// Leading declaration modifiers shared by every declaration: any number of
-// traits written before the keyword, then an optional `pub`.
-const modifiers = ($) => [repeat($.trait), optional($.visibility)];
 
 export default grammar({
   name: 'tono',
@@ -41,6 +30,8 @@ export default grammar({
         $.union_declaration,
         $.operation_declaration,
         $.extension_declaration,
+        $.library_declaration,
+        $.test_declaration,
       ),
 
     // ── Imports ─────────────────────────────────────────────────────────
@@ -92,25 +83,46 @@ export default grammar({
         field('body', $.union_body),
       ),
 
-    // op ::= trait* "pub"? "op" name "(" type? ")" ( ":" type )? trait*
+    // op ::= trait* "pub"? "op" name "(" (param ":")? type? ")" ( ":" type )?
+    //        trait* impl?
     // Trailing traits bind greedily to the operation (mirrors the hand-written
     // parser), so a "@" after the signature never starts the next declaration.
     operation_declaration: ($) => seq(...modifiers($), $._operation_core),
 
     // The signature and its trailing traits, without the leading modifiers: an
     // operation inside an entry body takes neither traits above it nor "pub",
-    // because a trait written there belongs to the item before it.
+    // because a trait written there belongs to the item before it. The input
+    // may be named ("ref: note_ref"), which gives ".ref" references their
+    // provenance; the bare type form is kept for the older sources.
     _operation_core: ($) =>
       prec.right(
         seq(
           'op',
           field('name', $.identifier),
           '(',
-          field('input', optional($._type)),
+          optional(
+            seq(
+              optional(seq(field('parameter', $.identifier), ':')),
+              field('input', $._type),
+            ),
+          ),
           ')',
           optional(seq(':', field('output', $._type))),
           repeat($.trait),
+          optional(field('body', $.operation_impl)),
         ),
+      ),
+
+    // impl ::= "impl" ref "(" call_arg* ")" — the op's own body: a call into
+    // a declared opaque handle's method. The reference names the receiver
+    // field and the method (".bus.send"); "impl" is a keyword only in this
+    // position, after the op's traits, so a member named impl elsewhere is
+    // still an ordinary identifier.
+    operation_impl: ($) =>
+      seq(
+        'impl',
+        field('target', $.field_reference),
+        field('arguments', $.library_call_arguments),
       ),
 
     // ext ::= trait* "pub"? "ext" kind name "raw"? signature? "{" binding* "}"
@@ -150,6 +162,208 @@ export default grammar({
         field('value', choice($.string, $.multiline_string)),
       ),
 
+    // ── Foreign libraries: see grammar/libraries.js ─────────────────────
+
+    // ── Tests ───────────────────────────────────────────────────────────
+
+    // test ::= "test" string "{" statement* "}"
+    // "test" is a keyword only in top-level position: keyword extraction via
+    // the `word` rule means the token exists only where a declaration may
+    // start, so the same word keeps working as an ordinary name (member,
+    // type, op) everywhere else. "stub", "expect", "any" and "None" below
+    // are contextual the same way: their tokens are valid only inside a test
+    // body, so outside one they lex as plain identifiers.
+    test_declaration: ($) =>
+      seq('test', field('name', $.string), field('body', $.test_body)),
+
+    test_body: ($) => seq('{', repeat($._test_statement), '}'),
+
+    _test_statement: ($) =>
+      choice($.test_binding, $.stub_declaration, $.expect_declaration),
+
+    // binding ::= name ":" value — a construction (ctor of an entry), an op
+    // call, a literal, or dataflow out of a previous binding.
+    test_binding: ($) =>
+      seq(field('name', $.identifier), ':', field('value', $._test_value)),
+
+    // stub ::= (name ":")? "stub" target ":" value
+    // The value replaces the op's declared dependency on that instance. A
+    // list is a sequence: each call consumes the next response, the last
+    // repeats. The optional binding records what crossed the dependency
+    // (s.requests).
+    stub_declaration: ($) =>
+      seq(
+        optional(seq(field('binding', $.identifier), ':')),
+        'stub',
+        field('target', $.stub_target),
+        ':',
+        field('value', $._test_value),
+      ),
+
+    // target ::= binding "." op "." dependency (e.g. c.get_user.http)
+    //          | library "." function          (e.g. configlib.load)
+    //          | library "." type "." method   (e.g. bus.publisher.send)
+    // The three-segment form is either an op's dependency on a bound entry or
+    // a handle method; the two are told apart at typecheck, so both share the
+    // same fields here.
+    stub_target: ($) =>
+      choice(
+        seq(
+          field('binding', $.identifier),
+          '.',
+          field('operation', $.identifier),
+          '.',
+          field('dependency', $.identifier),
+        ),
+        seq(
+          field('library', alias($.identifier, $.library_name)),
+          '.',
+          field('function', $.identifier),
+        ),
+      ),
+
+    // expect ::= "expect" subject ":" pattern — the subject is a previous
+    // binding or a projection out of one (s.requests).
+    expect_declaration: ($) =>
+      seq(
+        'expect',
+        field('subject', choice($.identifier, $.value_path)),
+        ':',
+        field('pattern', $._test_pattern),
+      ),
+
+    // ── Test values ─────────────────────────────────────────────────────
+
+    // The value grammar is the calculus subset the tests reuse: literals,
+    // ctor (possibly qualified, http.response { ... }), list, field access,
+    // and an op call. No new expressive power.
+    _test_value: ($) =>
+      choice(
+        $.string,
+        $.multiline_string,
+        $.integer,
+        $.float_literal,
+        $.boolean,
+        $.map_expression,
+        $.constructor_expression,
+        $.list_expression,
+        $.call_expression,
+        $.value_path,
+        $.identifier,
+      ),
+
+    // ctor ::= type "{" (field ":" value)* "}" — the type name resolves like
+    // any other type reference, so a qualified ctor reuses qualified_type.
+    constructor_expression: ($) =>
+      seq(field('type', $._type_name), field('body', $.constructor_body)),
+
+    constructor_body: ($) => seq('{', commaSep($.constructor_field), '}'),
+
+    constructor_field: ($) =>
+      seq(field('name', $.identifier), ':', field('value', $._test_value)),
+
+    list_expression: ($) => seq('[', commaSep($._test_value), ']'),
+
+    // map ::= "{" (key ":" value),* "}" — a headless brace in value position
+    // is a string-keyed map (headers); the key may be written bare or quoted.
+    map_expression: ($) => seq('{', commaSep($.map_entry), '}'),
+
+    map_entry: ($) =>
+      seq(
+        field('key', choice($.string, alias($.identifier, $.map_key))),
+        ':',
+        field('value', $._test_value),
+      ),
+
+    boolean: ($) => choice('true', 'false'),
+
+    // call ::= (receiver ".")? name "(" value? ")" — the receiver form calls
+    // an op on a constructed entry binding; the bare form calls a contract
+    // declaration, which belongs to no entry.
+    call_expression: ($) =>
+      seq(
+        optional(seq(field('receiver', $.identifier), '.')),
+        field('function', $.identifier),
+        field('arguments', $.call_arguments),
+      ),
+
+    call_arguments: ($) => seq('(', commaSep($._test_value), ')'),
+
+    // path ::= base "." field+ — dataflow between bindings (saved.id) or a
+    // stub projection (s.requests).
+    value_path: ($) =>
+      seq(
+        field('base', $.identifier),
+        repeat1(seq('.', alias($.identifier, $.field_name))),
+      ),
+
+    // ── Test patterns ───────────────────────────────────────────────────
+
+    // A pattern is the ctor form plus three marks in value position: ".."
+    // (unlisted fields are unchecked; last element of a body), "any" (field
+    // present, value free) and "None" (field absent). Literals, paths and a
+    // bare name (ok) are also patterns.
+    _test_pattern: ($) =>
+      choice(
+        $.string,
+        $.multiline_string,
+        $.integer,
+        $.float_literal,
+        $.boolean,
+        $.constructor_pattern,
+        $.map_pattern,
+        $.list_pattern,
+        $.any_pattern,
+        $.none_pattern,
+        $.value_path,
+        $.identifier,
+      ),
+
+    constructor_pattern: ($) =>
+      seq(
+        field('type', $._type_name),
+        field('body', $.constructor_pattern_body),
+      ),
+
+    constructor_pattern_body: ($) =>
+      seq(
+        '{',
+        optional(
+          choice(
+            seq(
+              commaSep1($.field_pattern),
+              optional(seq($.rest_pattern, optional(','))),
+            ),
+            seq($.rest_pattern, optional(',')),
+          ),
+        ),
+        '}',
+      ),
+
+    field_pattern: ($) =>
+      seq(field('name', $.identifier), ':', field('value', $._test_pattern)),
+
+    rest_pattern: ($) => '..',
+
+    any_pattern: ($) => 'any',
+
+    none_pattern: ($) => 'None',
+
+    list_pattern: ($) => seq('[', commaSep($._test_pattern), ']'),
+
+    // A headless brace in pattern position is a map subset (a header map):
+    // ".." is tolerated anywhere, since a map pattern is a subset by name
+    // either way.
+    map_pattern: ($) =>
+      seq('{', repeat(choice($.map_entry_pattern, $.rest_pattern, ',')), '}'),
+
+    map_entry_pattern: ($) =>
+      seq(
+        field('key', choice($.string, alias($.identifier, $.map_key))),
+        ':',
+        field('value', $._test_pattern),
+      ),
+
     visibility: ($) => 'pub',
 
     // generics ::= "[" name ("," name)* "]"
@@ -171,15 +385,20 @@ export default grammar({
         '}',
       ),
 
-    // member ::= name ":" type ("=" match)? trait*
+    // member ::= name ":" type ( trait | "=" (match | call) )*
+    // The value is a selection table or a library call ("= ns.fn(...)"); a
+    // trait may sit before or after it ("@with = ns.fn(...)" reads as well as
+    // "= ns.fn(...) @with"), which is why the two interleave here.
     member: ($) =>
       seq(
         field('name', $.identifier),
         ':',
         field('type', $._type),
-        optional(seq('=', field('value', $.match_expression))),
-        repeat($.trait),
+        repeat(choice($.trait, $._member_value)),
       ),
+
+    _member_value: ($) =>
+      seq('=', field('value', choice($.match_expression, $.library_call))),
 
     // match ::= "match" ref "{" (pattern "=>" value)* "}" — the selection table
     // of an entry or config field. "match" is a contextual identifier for the
@@ -310,9 +529,10 @@ export default grammar({
     key_value: ($) =>
       seq(field('key', $.identifier), ':', field('value', $._trait_value)),
 
-    // A value position accepts a literal, a field reference, or (inside a
-    // string) a template of references: the rule belongs to the language, not
-    // to any single trait.
+    // A value position accepts a literal, a field reference, a struct literal
+    // (@body(note_body { title: .x })), a library call (auth.sign(.request))
+    // or (inside a string) a template of references: the rule belongs to the
+    // language, not to any single trait.
     _trait_value: ($) =>
       choice(
         $.string,
@@ -321,6 +541,8 @@ export default grammar({
         $.float_literal,
         $.identifier,
         $.field_reference,
+        $.struct_literal,
+        $.library_call,
       ),
 
     // ── Literals and lexical ────────────────────────────────────────────
@@ -368,5 +590,7 @@ export default grammar({
     identifier: ($) => /[A-Za-z_][A-Za-z0-9_]*/,
 
     comment: ($) => token(seq('//', /.*/)),
+
+    ...libraryRules,
   },
 });
