@@ -151,4 +151,16 @@ type names.
 Extensions bind bespoke behavior: `ext hook name(input) -> output { lang: "file#symbol" }`,
 with `contract` and `constraint` kinds and a reserved `conformance` key.
 
+Foreign libraries: `ext name { lang: "path" struct ... type ... extern ... }`
+declares per-language module paths, foreign structs, opaque handle types and
+`extern fn(params): type { lang { call: "symbol"(args) yields: (...) returns: T { ... } errors: { ... } } }`
+bindings, with the `sync` and `infallible` convention markers. Entry fields take
+a library call as their source (`= lib.fn(.a, .b)`), an op may carry its own
+`impl .handle.method(args)` body, and a trait argument may bind a call
+(`auth.sign(.request)`).
+
+Declared tests: `test "name" { ... }` with bindings, `stub` (of an op dependency,
+a library function or a handle method), and `expect` patterns over constructors,
+lists and maps.
+
 Strings are single-line (with escapes) or triple-quoted (multi-line).

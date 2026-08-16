@@ -1,0 +1,713 @@
+================================================================================
+Library block with module paths, foreign structs and a projected extern
+================================================================================
+
+ext configlib {
+  go: "github.com/example/configlib"
+  ts: "@example/configlib"
+
+  struct go_config { Host: string, DevHost: string, Env: string }
+  struct ts_config { host: string, token: string }
+
+  extern load(service: string, region: string): app_config {
+    go {
+      call: "Load"(service, region)
+      yields: (cfg: go_config)
+      returns: app_config {
+        endpoint: match .cfg.Env { "prod" => .cfg.Host, _ => .cfg.DevHost }
+        token: .cfg.Token
+      }
+    }
+    ts {
+      call: "load"(region, service)
+      yields: (cfg: ts_config)
+      returns: app_config { endpoint: .cfg.host, token: .cfg.token }
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (library_path
+        (language_name)
+        (string))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type))
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)
+                (parameter_name)))
+            (yields_binding
+              (yields_position
+                (identifier)
+                (named_type
+                  (type_identifier))))
+            (returns_binding
+              (named_type
+                (type_identifier))
+              (returns_body
+                (returns_field
+                  (identifier)
+                  (match_expression
+                    (match_keyword)
+                    (field_reference
+                      (field_name)
+                      (field_name))
+                    (match_body
+                      (match_arm
+                        (string)
+                        (field_reference
+                          (field_name)
+                          (field_name)))
+                      (match_arm
+                        (match_pattern_name)
+                        (field_reference
+                          (field_name)
+                          (field_name))))))
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)
+                    (field_name))))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)
+                (parameter_name)))
+            (yields_binding
+              (yields_position
+                (identifier)
+                (named_type
+                  (type_identifier))))
+            (returns_binding
+              (named_type
+                (type_identifier))
+              (returns_body
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)
+                    (field_name)))
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)
+                    (field_name)))))))))))
+
+================================================================================
+Language block with the error sentinel, an errors map and a struct-literal argument
+================================================================================
+
+ext store {
+  go: "github.com/example/store"
+  ts: "@example/store"
+
+  struct go_body { ID: string, Text: string }
+  struct ts_opts { id: string, retries: i32 }
+
+  extern fetch(id: string): fetched {
+    go {
+      call: "Fetch"(id)
+      yields: (err: error, body: go_body, ok: bool)
+      returns: fetched { id: .body.ID, text: .body.Text, verified: .ok }
+      errors: { "ErrBusy" => overloaded, "ErrGone" => not_found }
+    }
+    ts {
+      call: "fetch"(ts_opts { id: id, retries: 3 })
+      errors: { "BUSY" => overloaded }
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (library_path
+        (language_name)
+        (string))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)))
+            (yields_binding
+              (yields_position
+                (identifier)
+                (error_sentinel))
+              (yields_position
+                (identifier)
+                (named_type
+                  (type_identifier)))
+              (yields_position
+                (identifier)
+                (primitive_type)))
+            (returns_binding
+              (named_type
+                (type_identifier))
+              (returns_body
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)
+                    (field_name)))
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)
+                    (field_name)))
+                (returns_field
+                  (identifier)
+                  (field_reference
+                    (field_name)))))
+            (errors_binding
+              (errors_body
+                (error_mapping
+                  (string)
+                  (type_identifier))
+                (error_mapping
+                  (string)
+                  (type_identifier)))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (struct_literal
+                  (type_identifier)
+                  (struct_literal_body
+                    (struct_literal_field
+                      (identifier)
+                      (identifier))
+                    (struct_literal_field
+                      (identifier)
+                      (integer))))))
+            (errors_binding
+              (errors_body
+                (error_mapping
+                  (string)
+                  (type_identifier))))))))))
+
+================================================================================
+Convention markers: sync for a blocking Rust call, infallible for a Go call
+================================================================================
+
+ext idgen {
+  go: "github.com/example/idgen"
+  rust: "idgen"
+
+  extern next(prefix: string): string {
+    go {
+      call: "Next"(prefix)
+      infallible
+    }
+    rust {
+      call: "next"(prefix)
+      sync
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (library_path
+        (language_name)
+        (string))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (primitive_type)
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)))
+            (infallible_marker))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)))
+            (sync_marker)))))))
+
+================================================================================
+Opaque handle type with extern methods and a constructor extern
+================================================================================
+
+ext bus {
+  go: "github.com/example/bus"
+
+  struct go_ack { ID: string, OK: bool }
+
+  type publisher {
+    extern send(topic: string, body: string): ack {
+      go {
+        call: "Send"(topic, body)
+        yields: (a: go_ack)
+        returns: ack { id: .a.ID, accepted: .a.OK }
+      }
+    }
+  }
+
+  extern connect(endpoint: string, token: string): publisher {
+    go { call: "Connect"(endpoint, token) }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))))
+      (opaque_type
+        (foreign_type_name)
+        (opaque_type_body
+          (extern_declaration
+            (identifier)
+            (extern_parameters
+              (extern_parameter
+                (identifier)
+                (primitive_type))
+              (extern_parameter
+                (identifier)
+                (primitive_type)))
+            (named_type
+              (type_identifier))
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments
+                    (parameter_name)
+                    (parameter_name)))
+                (yields_binding
+                  (yields_position
+                    (identifier)
+                    (named_type
+                      (type_identifier))))
+                (returns_binding
+                  (named_type
+                    (type_identifier))
+                  (returns_body
+                    (returns_field
+                      (identifier)
+                      (field_reference
+                        (field_name)
+                        (field_name)))
+                    (returns_field
+                      (identifier)
+                      (field_reference
+                        (field_name)
+                        (field_name))))))))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type))
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)
+                (parameter_name)))))))))
+
+================================================================================
+Entry fields sourced from library calls, an injectable handle and an op impl body
+================================================================================
+
+pub struct client {
+  service: string @env("SERVICE_NAME")
+  region: string @arg
+
+  config: app_config = configlib.load(.service, .region)
+  bus: bus.publisher @with = bus.connect(.config.endpoint, .config.token)
+  spare: bus.publisher = bus.connect(.config.endpoint, .config.token) @with
+
+  op publish(payload: note): ack
+    @errors(overloaded)
+    impl .bus.send("notes", .payload.body)
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)))
+      (member
+        (identifier)
+        (named_type
+          (type_identifier))
+        (library_call
+          (library_name)
+          (identifier)
+          (library_call_arguments
+            (field_reference
+              (field_name))
+            (field_reference
+              (field_name)))))
+      (member
+        (identifier)
+        (named_type
+          (qualified_type
+            (module_qualifier)
+            (type_identifier)))
+        (trait
+          (trait_name))
+        (library_call
+          (library_name)
+          (identifier)
+          (library_call_arguments
+            (field_reference
+              (field_name)
+              (field_name))
+            (field_reference
+              (field_name)
+              (field_name)))))
+      (member
+        (identifier)
+        (named_type
+          (qualified_type
+            (module_qualifier)
+            (type_identifier)))
+        (library_call
+          (library_name)
+          (identifier)
+          (library_call_arguments
+            (field_reference
+              (field_name)
+              (field_name))
+            (field_reference
+              (field_name)
+              (field_name))))
+        (trait
+          (trait_name)))
+      (operation_declaration
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))))
+        (operation_impl
+          (field_reference
+            (field_name)
+            (field_name))
+          (library_call_arguments
+            (string)
+            (field_reference
+              (field_name)
+              (field_name))))))))
+
+================================================================================
+The assembled request bound to a trait argument through a library call
+================================================================================
+
+pub struct client {
+  endpoint: string @env("ENDPOINT")
+
+  op publish(payload: note): ack
+    @http(method: "POST", path: "/notes", endpoint: .endpoint)
+    @body(.payload)
+    @header("Authorization", auth.sign(.request))
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (operation_declaration
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (string)))
+            (trait_argument
+              (key_value
+                (identifier)
+                (field_reference
+                  (field_name))))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (field_reference
+                (field_name)))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))
+            (trait_argument
+              (library_call
+                (library_name)
+                (identifier)
+                (library_call_arguments
+                  (field_reference
+                    (field_name)))))))))))
+
+================================================================================
+Stubbing a library function and a handle method in a declared test
+================================================================================
+
+test "the config from the library becomes the endpoint" {
+  stub configlib.load: app_config { endpoint: "https://x.test", token: "t0" }
+  stub bus.connect: bus.publisher {}
+  stub bus.publisher.send: overloaded { message: "shedding" }
+  c: client { region: "us-east" }
+  got: c.publish(note { id: "n1", body: "oi" })
+  expect got: overloaded { message: "shedding" }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    (string)
+    (test_body
+      (stub_declaration
+        (stub_target
+          (library_name)
+          (identifier))
+        (constructor_expression
+          (type_identifier)
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (string))
+            (constructor_field
+              (identifier)
+              (string)))))
+      (stub_declaration
+        (stub_target
+          (library_name)
+          (identifier))
+        (constructor_expression
+          (qualified_type
+            (module_qualifier)
+            (type_identifier))
+          (constructor_body)))
+      (stub_declaration
+        (stub_target
+          (identifier)
+          (identifier)
+          (identifier))
+        (constructor_expression
+          (type_identifier)
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (string)))))
+      (test_binding
+        (identifier)
+        (constructor_expression
+          (type_identifier)
+          (constructor_body
+            (constructor_field
+              (identifier)
+              (string)))))
+      (test_binding
+        (identifier)
+        (call_expression
+          (identifier)
+          (identifier)
+          (call_arguments
+            (constructor_expression
+              (type_identifier)
+              (constructor_body
+                (constructor_field
+                  (identifier)
+                  (string))
+                (constructor_field
+                  (identifier)
+                  (string)))))))
+      (expect_declaration
+        (identifier)
+        (constructor_pattern
+          (type_identifier)
+          (constructor_pattern_body
+            (field_pattern
+              (identifier)
+              (string))))))))
+
+================================================================================
+The legacy ext kind form still parses next to a library block
+================================================================================
+
+ext impl save_note {
+  go: "ext/go/notes.go#StoreSave"
+}
+
+ext notes {
+  go: "github.com/example/notes"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (extension_declaration
+    (extension_kind)
+    (identifier)
+    (extension_body
+      (extension_binding
+        (identifier)
+        (string))))
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string)))))
