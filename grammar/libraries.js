@@ -118,10 +118,12 @@ export const libraryRules = {
   extern_body: ($) => seq('{', repeat(choice($.extern_language_block, ',')), '}'),
 
   // lang_block ::= lang "{" (call | yields | returns | errors | sync |
-  //                          infallible)* "}"
+  //                          infallible | ctx)* "}"
   // "sync" and "infallible" mark a call that steps out of the target's
-  // convention (a blocking Rust call, a Go call with no error return); the
-  // convention itself is never written down.
+  // convention (a blocking Rust call, a Go call with no error return); "ctx"
+  // marks a call that receives the target's own cancellation/deadline
+  // context in its idiomatic position. The convention itself is never
+  // written down.
   extern_language_block: ($) =>
     seq(
       field('language', alias($.identifier, $.language_name)),
@@ -134,6 +136,7 @@ export const libraryRules = {
           $.errors_binding,
           $.sync_marker,
           $.infallible_marker,
+          $.ctx_marker,
           ',',
         ),
       ),
@@ -203,6 +206,8 @@ export const libraryRules = {
   sync_marker: ($) => 'sync',
 
   infallible_marker: ($) => 'infallible',
+
+  ctx_marker: ($) => 'ctx',
 
   // ── Library calls ───────────────────────────────────────────────────
 

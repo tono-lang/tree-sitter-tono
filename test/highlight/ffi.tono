@@ -42,6 +42,8 @@ ext configlib {
 //                             ^ type
         infallible
 //      ^ keyword.modifier
+        ctx
+//      ^ keyword.modifier
       }
       rust {
         call: "send"(topic)

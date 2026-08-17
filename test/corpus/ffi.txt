@@ -320,6 +320,66 @@ ext idgen {
             (sync_marker)))))))
 
 ================================================================================
+Convention marker: ctx for a foreign handle's own method call
+================================================================================
+
+ext conn {
+  go: "github.com/example/conn"
+
+  type session {
+    extern get(id: string): string {
+      go {
+        call: "Get"(id)
+        ctx
+      }
+    }
+  }
+
+  extern connect(): session {
+    go { call: "Connect"() }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (opaque_type
+        (foreign_type_name)
+        (opaque_type_body
+          (extern_declaration
+            (identifier)
+            (extern_parameters
+              (extern_parameter
+                (identifier)
+                (primitive_type)))
+            (primitive_type)
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments
+                    (parameter_name)))
+                (ctx_marker))))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters)
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments))))))))
+
+================================================================================
 Opaque handle type with extern methods and a constructor extern
 ================================================================================
 

@@ -43,6 +43,7 @@
 ; convention, so they read as modifiers, like "pub".
 (sync_marker) @keyword.modifier
 (infallible_marker) @keyword.modifier
+(ctx_marker) @keyword.modifier
 
 ; The reserved error position in a yields list is a builtin, not a tono type.
 (error_sentinel) @type.builtin
