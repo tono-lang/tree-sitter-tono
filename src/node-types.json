@@ -775,6 +775,10 @@
           "named": true
         },
         {
+          "type": "ctx_marker",
+          "named": true
+        },
+        {
           "type": "errors_binding",
           "named": true
         },
@@ -3149,6 +3153,10 @@
     "type": "comment",
     "named": true,
     "extra": true
+  },
+  {
+    "type": "ctx_marker",
+    "named": true
   },
   {
     "type": "date",
