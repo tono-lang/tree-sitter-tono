@@ -1912,6 +1912,16 @@
           }
         ]
       },
+      "instance": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "opaque_type_instance",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
@@ -1937,6 +1947,48 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "opaque_type_instance",
+    "named": true,
+    "fields": {
+      "argument": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "list_type",
+            "named": true
+          },
+          {
+            "type": "map_type",
+            "named": true
+          },
+          {
+            "type": "named_type",
+            "named": true
+          },
+          {
+            "type": "nullable",
+            "named": true
+          },
+          {
+            "type": "primitive_type",
+            "named": true
+          }
+        ]
+      },
+      "foreign_name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

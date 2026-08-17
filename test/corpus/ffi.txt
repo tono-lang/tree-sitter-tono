@@ -423,6 +423,71 @@ ext bus {
                 (parameter_name)))))))))
 
 ================================================================================
+Opaque handle type instantiating a foreign generic type
+================================================================================
+
+ext cfgkit {
+  go: "github.com/example/cfgkit"
+
+  type source_settings("Source", settings) {
+    extern get(): settings {
+      go { call: "Get"() }
+    }
+  }
+
+  extern new_env_source(service: string, region: string): source_settings {
+    go { call: "NewEnvSource"(service, region) }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (opaque_type
+        (foreign_type_name)
+        (opaque_type_instance
+          (string)
+          (named_type
+            (type_identifier)))
+        (opaque_type_body
+          (extern_declaration
+            (identifier)
+            (extern_parameters)
+            (named_type
+              (type_identifier))
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments)))))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type))
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)
+                (parameter_name)))))))))
+
+================================================================================
 Entry fields sourced from library calls, an injectable handle and an op impl body
 ================================================================================
 

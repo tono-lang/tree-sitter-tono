@@ -69,14 +69,28 @@ export const libraryRules = {
       field('type', $._type),
     ),
 
-  // type ::= "type" name "{" extern* "}" — an opaque handle: called, never
-  // read, never on the wire. Its externs are methods with an implicit
-  // receiver.
+  // type ::= "type" name instance? "{" extern* "}" — an opaque handle:
+  // called, never read, never on the wire. Its externs are methods with an
+  // implicit receiver.
   opaque_type: ($) =>
     seq(
       'type',
       field('name', alias($.identifier, $.foreign_type_name)),
+      optional(field('instance', $.opaque_type_instance)),
       field('body', $.opaque_type_body),
+    ),
+
+  // instance ::= "(" string "," type ")" — which instantiation of a foreign
+  // generic type this opaque handle names: the foreign type's own name (a
+  // string, so the origin stays visible) and the tono argument it is
+  // monomorphized with.
+  opaque_type_instance: ($) =>
+    seq(
+      '(',
+      field('foreign_name', $.string),
+      ',',
+      field('argument', $._type),
+      ')',
     ),
 
   opaque_type_body: ($) =>
