@@ -18,6 +18,23 @@ pub struct client {
 //        ^ attribute
   }
 
+  by_segment: map[string]string @env("BS")
+//^ property
+  seg: string @env("SEG")
+//^ property
+  segmented: string = match .by_segment[.seg] {
+//                    ^ keyword.conditional
+//                           ^ property
+//                                       ^ property
+    null => .endpoint
+//  ^ constant.builtin
+//       ^ operator
+//           ^ property
+    _ => ._
+//  ^ character.special
+//        ^ character.special
+  }
+
   settings: config
     @bind(api_key, .api_key)
 //   ^ attribute

@@ -400,15 +400,29 @@ export default grammar({
     _member_value: ($) =>
       seq('=', field('value', choice($.match_expression, $.library_call))),
 
-    // match ::= "match" ref "{" (pattern "=>" value)* "}" — the selection table
-    // of an entry or config field. "match" is a contextual identifier for the
-    // same reason the extension kind is: the lexer does not reserve it.
+    // match ::= "match" (ref | ref "[" ref "]") "{" (pattern "=>" value)* "}"
+    // — the selection table of an entry or config field. "match" is a
+    // contextual identifier for the same reason the extension kind is: the
+    // lexer does not reserve it. The subject may also be a map field indexed
+    // by another in-scope field ("by_segment[.seg]"), which resolves to an
+    // optional value; "null" (a bare match_pattern_name, nothing new at the
+    // grammar level) is then the arm required for the absent case, and "._"
+    // (an ordinary field_reference naming "_") is the arm value referring
+    // back to the subject.
     match_expression: ($) =>
       seq(
         alias($.identifier, $.match_keyword),
-        field('subject', $.field_reference),
+        field('subject', $._match_subject),
         field('body', $.match_body),
       ),
+
+    _match_subject: ($) => choice($.field_reference, $.indexed_field_reference),
+
+    // "base[key]": a map field indexed by another field's value. Only valid
+    // in match-subject position — this alternative does not widen where an
+    // ordinary field_reference is accepted elsewhere in the grammar.
+    indexed_field_reference: ($) =>
+      seq(field('base', $.field_reference), '[', field('key', $.field_reference), ']'),
 
     match_body: ($) => seq('{', repeat(choice($.match_arm, ',')), '}'),
 

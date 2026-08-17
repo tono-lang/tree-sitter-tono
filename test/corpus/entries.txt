@@ -163,6 +163,63 @@ struct client {
                     (string)))))))))))
 
 ================================================================================
+Map-indexed match subject with a null arm and a subject reference
+================================================================================
+
+struct client {
+  by_segment: map[string]string @env("BS")
+  seg: string @env("SEG")
+  endpoint: string = match .by_segment[.seg] {
+    null => .endpoint_fallback
+    _ => ._
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (map_type
+          (primitive_type)
+          (primitive_type))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (member
+        (identifier)
+        (primitive_type)
+        (match_expression
+          (match_keyword)
+          (indexed_field_reference
+            (field_reference
+              (field_name))
+            (field_reference
+              (field_name)))
+          (match_body
+            (match_arm
+              (match_pattern_name)
+              (field_reference
+                (field_name)))
+            (match_arm
+              (match_pattern_name)
+              (field_reference
+                (field_name)))))))))
+
+================================================================================
 Composed config bound at the composition point
 ================================================================================
 
