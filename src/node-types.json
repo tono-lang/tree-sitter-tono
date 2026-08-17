@@ -1072,6 +1072,32 @@
     }
   },
   {
+    "type": "indexed_field_reference",
+    "named": true,
+    "fields": {
+      "base": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          }
+        ]
+      },
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "key_value",
     "named": true,
     "fields": {
@@ -1748,6 +1774,10 @@
         "types": [
           {
             "type": "field_reference",
+            "named": true
+          },
+          {
+            "type": "indexed_field_reference",
             "named": true
           }
         ]

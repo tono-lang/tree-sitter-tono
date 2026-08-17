@@ -115,6 +115,19 @@
 ((match_pattern_name) @character.special
   (#eq? @character.special "_"))
 
+; "null" is the mandatory absence arm on a map-indexed (T?) match subject;
+; nothing new at the grammar level (still a match_pattern_name), but it reads
+; as a builtin rather than an ordinary case name.
+((match_pattern_name) @constant.builtin
+  (#eq? @constant.builtin "null"))
+
+; "._" in an arm's value position refers back to the match subject, narrowed
+; non-optional. It parses as an ordinary field_reference naming "_" (the
+; leading "." still reads as an ordinary punctuation.delimiter, same as the
+; "_" wildcard pattern only marks its own identifier and not a preceding token).
+((field_reference (field_name) @character.special .)
+  (#eq? @character.special "_"))
+
 ; Test bindings and their uses read as variables; the pieces of a stub target
 ; keep the reading of what they name (the op, the dependency field). The ctor
 ; type name is already covered by the type captures below.
