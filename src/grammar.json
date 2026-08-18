@@ -447,6 +447,19 @@
         },
         {
           "type": "FIELD",
+          "name": "call",
+          "content": {
+            "type": "SYMBOL",
+            "name": "handle_method_call"
+          }
+        }
+      ]
+    },
+    "handle_method_call": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
           "name": "target",
           "content": {
             "type": "SYMBOL",
@@ -1911,6 +1924,10 @@
               {
                 "type": "SYMBOL",
                 "name": "library_call"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "handle_method_call"
               }
             ]
           }
