@@ -60,6 +60,11 @@ pub struct client {
 //                     ^ module
 //                               ^ function.call
 //                                     ^ property
+  settings: app_config = .provider.load(.region)
+//^ property
+//                        ^ property
+//                                 ^ function.call
+//                                       ^ property
   op publish(payload: note): ack
 //   ^ function
     @header("Authorization", auth.sign(.request))

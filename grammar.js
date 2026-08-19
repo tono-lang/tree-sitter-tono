@@ -113,14 +113,19 @@ export default grammar({
         ),
       ),
 
-    // impl ::= "impl" ref "(" call_arg* ")" — the op's own body: a call into
-    // a declared opaque handle's method. The reference names the receiver
-    // field and the method (".bus.send"); "impl" is a keyword only in this
+    // impl ::= "impl" handle_call — the op's own body: a call into a
+    // declared opaque handle's method. "impl" is a keyword only in this
     // position, after the op's traits, so a member named impl elsewhere is
     // still an ordinary identifier.
     operation_impl: ($) =>
+      seq('impl', field('call', $.handle_method_call)),
+
+    // handle_call ::= ref "(" call_arg* ")" — a call into a declared opaque
+    // handle's method. The reference names the receiver field and the method
+    // (".bus.send"). Shared by an op's impl body and a member's "= .h.m(...)"
+    // value source, so the same syntax gets the same tree in both positions.
+    handle_method_call: ($) =>
       seq(
-        'impl',
         field('target', $.field_reference),
         field('arguments', $.library_call_arguments),
       ),
@@ -385,10 +390,11 @@ export default grammar({
         '}',
       ),
 
-    // member ::= name ":" type ( trait | "=" (match | call) )*
-    // The value is a selection table or a library call ("= ns.fn(...)"); a
-    // trait may sit before or after it ("@with = ns.fn(...)" reads as well as
-    // "= ns.fn(...) @with"), which is why the two interleave here.
+    // member ::= name ":" type ( trait | "=" (match | call | handle_call) )*
+    // The value is a selection table, a library call ("= ns.fn(...)") or a
+    // handle method call ("= .provider.get()"); a trait may sit before or
+    // after it ("@with = ns.fn(...)" reads as well as "= ns.fn(...) @with"),
+    // which is why the two interleave here.
     member: ($) =>
       seq(
         field('name', $.identifier),
@@ -398,7 +404,13 @@ export default grammar({
       ),
 
     _member_value: ($) =>
-      seq('=', field('value', choice($.match_expression, $.library_call))),
+      seq(
+        '=',
+        field(
+          'value',
+          choice($.match_expression, $.library_call, $.handle_method_call),
+        ),
+      ),
 
     // match ::= "match" (ref | ref "[" ref "]") "{" (pattern "=>" value)* "}"
     // — the selection table of an entry or config field. "match" is a

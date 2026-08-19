@@ -1050,6 +1050,32 @@
     }
   },
   {
+    "type": "handle_method_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "library_call_arguments",
+            "named": true
+          }
+        ]
+      },
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "field_reference",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "import_declaration",
     "named": true,
     "fields": {
@@ -1843,6 +1869,10 @@
         "required": false,
         "types": [
           {
+            "type": "handle_method_call",
+            "named": true
+          },
+          {
             "type": "library_call",
             "named": true
           },
@@ -2101,22 +2131,12 @@
     "type": "operation_impl",
     "named": true,
     "fields": {
-      "arguments": {
+      "call": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "library_call_arguments",
-            "named": true
-          }
-        ]
-      },
-      "target": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "field_reference",
+            "type": "handle_method_call",
             "named": true
           }
         ]

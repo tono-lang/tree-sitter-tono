@@ -106,10 +106,11 @@
 ; member it points at. The wildcard arm is the one pattern that is not a value.
 (field_name) @property
 
-; The last segment of an impl target is the handle method being called; the
-; ones before it are the receiver fields. This must follow the field_name
-; capture above so the method reading wins.
-(operation_impl target: (field_reference (field_name) @function.call .))
+; The last segment of a handle method call's target (an op's impl body or a
+; member's "= .h.m(...)" source) is the method being called; the ones before
+; it are the receiver fields. This must follow the field_name capture above so
+; the method reading wins.
+(handle_method_call target: (field_reference (field_name) @function.call .))
 
 (match_pattern_name) @constant
 
