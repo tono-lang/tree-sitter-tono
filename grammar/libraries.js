@@ -69,14 +69,17 @@ export const libraryRules = {
       field('type', $._type),
     ),
 
-  // type ::= "type" name instance? "{" extern* "}" — an opaque handle:
-  // called, never read, never on the wire. Its externs are methods with an
-  // implicit receiver.
+  // type ::= "type" name instance? "interface"? "{" extern* "}" — an opaque
+  // handle: called, never read, never on the wire. Its externs are methods
+  // with an implicit receiver. The "interface" marker declares the foreign
+  // type is abstract (a Go interface, held by value), not a concrete struct
+  // held by pointer.
   opaque_type: ($) =>
     seq(
       'type',
       field('name', alias($.identifier, $.foreign_type_name)),
       optional(field('instance', $.opaque_type_instance)),
+      optional(field('shape', alias('interface', $.foreign_type_shape))),
       field('body', $.opaque_type_body),
     ),
 
