@@ -1115,3 +1115,64 @@ ext calckit {
                 (call_binding
                   (foreign_symbol)
                   (library_call_arguments))))))))))
+
+================================================================================
+Class reference as a call argument
+================================================================================
+
+ext mathkit {
+  ts: "@tono-ext-fixture/mathkit"
+
+  type answer_calculator {
+    extern compute(): float {
+      ts { call: "compute"() sync }
+    }
+  }
+
+  extern make(): answer_calculator {
+    ts { call: "instantiate"(type answer_calculator, "Pick"(type answer_calculator)) sync }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (opaque_type
+        (foreign_type_name)
+        (opaque_type_body
+          (extern_declaration
+            (identifier)
+            (extern_parameters)
+            (primitive_type)
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments))
+                (sync_marker))))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters)
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (class_reference
+                  (foreign_type_name))
+                (nested_call
+                  (foreign_symbol)
+                  (library_call_arguments
+                    (class_reference
+                      (foreign_type_name))))))
+            (sync_marker)))))))
