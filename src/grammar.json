@@ -3486,8 +3486,28 @@
             "type": "SYMBOL",
             "name": "_type"
           }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "variadic",
+              "content": {
+                "type": "SYMBOL",
+                "name": "variadic_marker"
+              }
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         }
       ]
+    },
+    "variadic_marker": {
+      "type": "STRING",
+      "value": "variadic"
     },
     "extern_body": {
       "type": "SEQ",
@@ -3570,6 +3590,10 @@
               {
                 "type": "SYMBOL",
                 "name": "ctx_marker"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "new_marker"
               },
               {
                 "type": "STRING",
@@ -3898,6 +3922,10 @@
       "type": "STRING",
       "value": "ctx"
     },
+    "new_marker": {
+      "type": "STRING",
+      "value": "new"
+    },
     "library_call": {
       "type": "SEQ",
       "members": [
@@ -4003,6 +4031,14 @@
         },
         {
           "type": "SYMBOL",
+          "name": "nested_call"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "call_argument_list"
+        },
+        {
+          "type": "SYMBOL",
           "name": "string"
         },
         {
@@ -4025,6 +4061,90 @@
           },
           "named": true,
           "value": "parameter_name"
+        }
+      ]
+    },
+    "nested_call": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "symbol",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "string"
+            },
+            "named": true,
+            "value": "foreign_symbol"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "arguments",
+          "content": {
+            "type": "SYMBOL",
+            "name": "library_call_arguments"
+          }
+        }
+      ]
+    },
+    "call_argument_list": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "["
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_call_argument"
+                },
+                {
+                  "type": "REPEAT",
+                  "content": {
+                    "type": "SEQ",
+                    "members": [
+                      {
+                        "type": "STRING",
+                        "value": ","
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "_call_argument"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "STRING",
+                      "value": ","
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": "]"
         }
       ]
     },

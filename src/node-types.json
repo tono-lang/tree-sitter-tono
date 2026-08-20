@@ -5,6 +5,49 @@
     "fields": {}
   },
   {
+    "type": "call_argument_list",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "call_argument_list",
+          "named": true
+        },
+        {
+          "type": "field_reference",
+          "named": true
+        },
+        {
+          "type": "float_literal",
+          "named": true
+        },
+        {
+          "type": "integer",
+          "named": true
+        },
+        {
+          "type": "nested_call",
+          "named": true
+        },
+        {
+          "type": "parameter_name",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        },
+        {
+          "type": "struct_literal",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "call_arguments",
     "named": true,
     "fields": {},
@@ -787,6 +830,10 @@
           "named": true
         },
         {
+          "type": "new_marker",
+          "named": true
+        },
+        {
           "type": "returns_binding",
           "named": true
         },
@@ -837,6 +884,16 @@
           },
           {
             "type": "primitive_type",
+            "named": true
+          }
+        ]
+      },
+      "variadic": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "variadic_marker",
             "named": true
           }
         ]
@@ -1253,6 +1310,10 @@
       "required": false,
       "types": [
         {
+          "type": "call_argument_list",
+          "named": true
+        },
+        {
           "type": "field_reference",
           "named": true
         },
@@ -1262,6 +1323,10 @@
         },
         {
           "type": "integer",
+          "named": true
+        },
+        {
+          "type": "nested_call",
           "named": true
         },
         {
@@ -1930,6 +1995,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "nested_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "library_call_arguments",
+            "named": true
+          }
+        ]
+      },
+      "symbol": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "foreign_symbol",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3381,6 +3472,10 @@
     "named": true
   },
   {
+    "type": "new_marker",
+    "named": true
+  },
+  {
     "type": "none_pattern",
     "named": true
   },
@@ -3471,6 +3566,10 @@
   {
     "type": "uuid",
     "named": false
+  },
+  {
+    "type": "variadic_marker",
+    "named": true
   },
   {
     "type": "visibility",

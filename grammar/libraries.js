@@ -129,18 +129,30 @@ export const libraryRules = {
 
   extern_parameters: ($) => seq('(', commaSep($.extern_parameter), ')'),
 
+  // param ::= name ":" type "variadic"? — the bare "variadic" marker opts
+  // this logical parameter into accepting a collection of values, the
+  // caller passing a list for it (Go's own "opts ...Option", Rust's
+  // "Vec<T>", TypeScript's "T[]", each materializing it in their own idiom).
   extern_parameter: ($) =>
-    seq(field('name', $.identifier), ':', field('type', $._type)),
+    seq(
+      field('name', $.identifier),
+      ':',
+      field('type', $._type),
+      optional(field('variadic', $.variadic_marker)),
+    ),
+
+  variadic_marker: ($) => 'variadic',
 
   extern_body: ($) => seq('{', repeat(choice($.extern_language_block, ',')), '}'),
 
   // lang_block ::= lang "{" (call | yields | returns | errors | sync |
-  //                          infallible | ctx)* "}"
+  //                          infallible | ctx | new)* "}"
   // "sync" and "infallible" mark a call that steps out of the target's
   // convention (a blocking Rust call, a Go call with no error return); "ctx"
   // marks a call that receives the target's own cancellation/deadline
-  // context in its idiomatic position. The convention itself is never
-  // written down.
+  // context in its idiomatic position; "new" opts the call into
+  // TypeScript's own class-construction syntax. The convention itself is
+  // never written down.
   extern_language_block: ($) =>
     seq(
       field('language', alias($.identifier, $.language_name)),
@@ -154,6 +166,7 @@ export const libraryRules = {
           $.sync_marker,
           $.infallible_marker,
           $.ctx_marker,
+          $.new_marker,
           ',',
         ),
       ),
@@ -226,6 +239,8 @@ export const libraryRules = {
 
   ctx_marker: ($) => 'ctx',
 
+  new_marker: ($) => 'new',
+
   // ── Library calls ───────────────────────────────────────────────────
 
   // call ::= ns "." fn "(" call_arg,* ")" — a call into a declared library
@@ -243,17 +258,34 @@ export const libraryRules = {
     seq('(', commaSep($._call_argument), ')'),
 
   // call_arg ::= ref | literal | name | name "{" field ":" value,* "}"
+  //            | string "(" call_arg,* ")" | "[" call_arg,* "]"
   // A bare name is the caller's own parameter; the struct literal maps the
-  // arguments into a foreign shape (the counterpart of "returns:").
+  // arguments into a foreign shape (the counterpart of "returns:"); a
+  // string immediately followed by "(" is a nested foreign-symbol call
+  // (no declared "extern" to resolve against, just a symbol and its own
+  // arguments), e.g. "WithPrecision"(precision) inside call:
+  // "FromFormula"(expr, "WithPrecision"(precision)); a "[" ... "]" list
+  // feeds a variadic logical parameter at its call site, e.g.
+  // from_formula(.expr, ["WithPrecision"(4)]).
   _call_argument: ($) =>
     choice(
       $.field_reference,
+      $.nested_call,
+      $.call_argument_list,
       $.string,
       $.integer,
       $.float_literal,
       $.struct_literal,
       alias($.identifier, $.parameter_name),
     ),
+
+  nested_call: ($) =>
+    seq(
+      field('symbol', alias($.string, $.foreign_symbol)),
+      field('arguments', $.library_call_arguments),
+    ),
+
+  call_argument_list: ($) => seq('[', commaSep($._call_argument), ']'),
 
   struct_literal: ($) =>
     seq(field('type', alias($.identifier, $.type_identifier)), field('body', $.struct_literal_body)),
