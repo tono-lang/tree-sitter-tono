@@ -173,13 +173,19 @@ export const libraryRules = {
       '}',
     ),
 
-  // call ::= "call" ":" string "(" call_arg,* ")"
+  // call ::= "call" ":" (string ".")? string "(" call_arg,* ")"
   // The foreign name is a string literal by design (the origin must be
-  // visible), so it gets its own node and never reads as a tono name.
+  // visible), so it gets its own node and never reads as a tono name. Two
+  // strings joined by a dot spell a static method: the first is the foreign
+  // type the call is qualified by (a receiver that is a type, not a value,
+  // hence a string and not a reference), the second the method on it.
   call_binding: ($) =>
     seq(
       'call',
       ':',
+      optional(
+        seq(field('receiver', alias($.string, $.foreign_type)), '.'),
+      ),
       field('symbol', alias($.string, $.foreign_symbol)),
       field('arguments', $.library_call_arguments),
     ),
