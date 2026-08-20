@@ -83,17 +83,31 @@ export const libraryRules = {
       field('body', $.opaque_type_body),
     ),
 
-  // instance ::= "(" string "," type ")" — which instantiation of a foreign
-  // generic type this opaque handle names: the foreign type's own name (a
-  // string, so the origin stays visible) and the tono argument it is
-  // monomorphized with.
+  // instance ::= "(" names "," type ")"
+  // names    ::= string | lang ":" string ("," lang ":" string)*
+  // Which instantiation of a foreign generic type this opaque handle names:
+  // the foreign type's own name (a string, so the origin stays visible) and
+  // the tono argument it is monomorphized with. One bare string names the
+  // type for every language; the keyed form names it per language, in the
+  // same "lang: string" shape the library's module paths use, for the case
+  // where the targets spell the same logical type differently.
   opaque_type_instance: ($) =>
     seq(
       '(',
-      field('foreign_name', $.string),
-      ',',
+      choice(
+        seq(field('foreign_name', $.string), ','),
+        repeat1(seq($.opaque_type_instance_name, ','))
+      ),
       field('argument', $._type),
       ')',
+    ),
+
+  // One "lang: string" entry of the keyed instantiation-name form.
+  opaque_type_instance_name: ($) =>
+    seq(
+      field('language', alias($.identifier, $.language_name)),
+      ':',
+      field('name', $.string),
     ),
 
   opaque_type_body: ($) =>

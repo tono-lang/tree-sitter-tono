@@ -548,6 +548,62 @@ ext cfgkit {
                 (parameter_name)))))))))
 
 ================================================================================
+Opaque handle instantiation naming the foreign type per language
+================================================================================
+
+ext calckit {
+  go: "github.com/example/calckit"
+  rust: "calckit"
+
+  type meter(go: "Meter", rust: "Gauge", float) interface {
+    extern read(): float {
+      go { call: "Read"() }
+      rust { call: "read"() }
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (library_path
+        (language_name)
+        (string))
+      (opaque_type
+        (foreign_type_name)
+        (opaque_type_instance
+          (opaque_type_instance_name
+            (language_name)
+            (string))
+          (opaque_type_instance_name
+            (language_name)
+            (string))
+          (primitive_type))
+        (foreign_type_shape)
+        (opaque_type_body
+          (extern_declaration
+            (identifier)
+            (extern_parameters)
+            (primitive_type)
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments)))
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_symbol)
+                  (library_call_arguments))))))))))
+
+================================================================================
 Entry fields sourced from library calls, an injectable handle and an op impl body
 ================================================================================
 
