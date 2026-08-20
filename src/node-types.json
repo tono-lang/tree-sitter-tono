@@ -2025,6 +2025,42 @@
       },
       "foreign_name": {
         "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "opaque_type_instance_name",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "opaque_type_instance_name",
+    "named": true,
+    "fields": {
+      "language": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "language_name",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
         "required": true,
         "types": [
           {
