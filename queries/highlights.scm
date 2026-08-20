@@ -88,6 +88,7 @@
 ; be visible, so it must never take the color of a tono identifier. It gets
 ; the special-string reading rather than the plain one.
 (foreign_symbol) @string.special
+(foreign_type) @string.special
 
 (type_parameter) @type.parameter
 

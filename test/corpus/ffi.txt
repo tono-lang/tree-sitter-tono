@@ -265,6 +265,57 @@ ext store {
                   (type_identifier))))))))))
 
 ================================================================================
+Static method: the call's receiver is a foreign type name
+================================================================================
+
+ext quantkit {
+  ts: "@example/quantkit"
+  rust: "quantkit"
+
+  extern parse(expr: string): float {
+    ts { call: "Formula"."parse"(expr) sync }
+    rust { call: "Formula"."parse"(expr) sync }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (library_path
+        (language_name)
+        (string))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (primitive_type)
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_type)
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)))
+            (sync_marker))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_type)
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)))
+            (sync_marker)))))))
+
+================================================================================
 Convention markers: sync for a blocking Rust call, infallible for a Go call
 ================================================================================
 

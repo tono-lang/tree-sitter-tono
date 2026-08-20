@@ -116,6 +116,16 @@
           }
         ]
       },
+      "receiver": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "foreign_type",
+            "named": true
+          }
+        ]
+      },
       "symbol": {
         "multiple": false,
         "required": true,
@@ -1085,6 +1095,29 @@
   },
   {
     "type": "foreign_symbol",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "escape_sequence",
+          "named": true
+        },
+        {
+          "type": "field_placeholder",
+          "named": true
+        },
+        {
+          "type": "input_placeholder",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "foreign_type",
     "named": true,
     "fields": {},
     "children": {
