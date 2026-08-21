@@ -4069,6 +4069,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "class_reference"
+        },
+        {
+          "type": "SYMBOL",
           "name": "string"
         },
         {
@@ -4091,6 +4095,28 @@
           },
           "named": true,
           "value": "parameter_name"
+        }
+      ]
+    },
+    "class_reference": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "type"
+        },
+        {
+          "type": "FIELD",
+          "name": "handle",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            },
+            "named": true,
+            "value": "foreign_type_name"
+          }
         }
       ]
     },

@@ -272,18 +272,25 @@ export const libraryRules = {
   // arguments), e.g. "WithPrecision"(precision) inside call:
   // "FromFormula"(expr, "WithPrecision"(precision)); a "[" ... "]" list
   // feeds a variadic logical parameter at its call site, e.g.
-  // from_formula(.expr, ["WithPrecision"(4)]).
+  // from_formula(.expr, ["WithPrecision"(4)]); "type" name is a class
+  // reference: a declared opaque handle passed as a value, for a library
+  // that takes the class itself and constructs it, e.g.
+  // "instantiate"(type answer_calculator).
   _call_argument: ($) =>
     choice(
       $.field_reference,
       $.nested_call,
       $.call_argument_list,
+      $.class_reference,
       $.string,
       $.integer,
       $.float_literal,
       $.struct_literal,
       alias($.identifier, $.parameter_name),
     ),
+
+  class_reference: ($) =>
+    seq('type', field('handle', alias($.identifier, $.foreign_type_name))),
 
   nested_call: ($) =>
     seq(
