@@ -27,23 +27,18 @@ op create_charge(charge): charge
       (type_identifier))))
 
 ================================================================================
-Operation with trailing traits
+Operation with traits above it
 ================================================================================
 
+@http(method: "POST", path: "/charges")
+@errors(card_declined, not_found)
+@async
 op create_charge(charge): charge
-  @http(method: "POST", path: "/charges")
-  @errors(card_declined, not_found)
-  @async
 
 --------------------------------------------------------------------------------
 
 (source_file
   (operation_declaration
-    (identifier)
-    (named_type
-      (type_identifier))
-    (named_type
-      (type_identifier))
     (trait
       (trait_name)
       (trait_arguments
@@ -63,7 +58,12 @@ op create_charge(charge): charge
         (trait_argument
           (identifier))))
     (trait
-      (trait_name))))
+      (trait_name))
+    (identifier)
+    (named_type
+      (type_identifier))
+    (named_type
+      (type_identifier))))
 
 ================================================================================
 Operation with nullable output
@@ -86,8 +86,8 @@ Named operation parameter
 ================================================================================
 
 pub struct client {
+  @http(method: "GET", path: "/notes/{.ref.id}")
   op fetch_note(ref: note_ref): note
-    @http(method: "GET", path: "/notes/{.ref.id}")
 }
 
 op lookup(id: string): note
@@ -100,12 +100,6 @@ op lookup(id: string): note
     (identifier)
     (struct_body
       (operation_declaration
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
         (trait
           (trait_name)
           (trait_arguments
@@ -117,7 +111,13 @@ op lookup(id: string): note
               (key_value
                 (identifier)
                 (string
-                  (field_placeholder)))))))))
+                  (field_placeholder))))))
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier)))))
   (operation_declaration
     (identifier)
     (identifier)

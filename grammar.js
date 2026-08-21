@@ -1,7 +1,7 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
-import { commaSep, commaSep1, modifiers } from './grammar/common.js';
+import { commaSep, commaSep1, inlineTrait, modifiers } from './grammar/common.js';
 import { libraryRules } from './grammar/libraries.js';
 
 // tree-sitter grammar for the Tono interface language.
@@ -18,6 +18,13 @@ export default grammar({
   word: ($) => $.identifier,
 
   extras: ($) => [/\s/, $.comment],
+
+  // The "@" that opens a trait comes from src/scanner.c as one of two tokens,
+  // decided by layout: a trait on a line of its own belongs to the item after
+  // it, a trait continuing a line belongs to that line. The grammar allows
+  // each where the frontend parser does; the tree shows one `trait` node
+  // either way.
+  externals: ($) => [$._inline_at, $._own_line_at],
 
   rules: {
     source_file: ($) => repeat($._definition),
@@ -71,29 +78,33 @@ export default grammar({
         field('body', $.enum_body),
       ),
 
-    // union ::= trait* "pub"? "union" name generics? trait* "{" variant* "}"
-    // Traits after the name (e.g. @discriminator) join the shape-level traits.
+    // union ::= trait* "pub"? "union" name generics? inline_trait* "{" variant* "}"
+    // Traits on the name's line (e.g. @discriminator) join the shape-level
+    // traits.
     union_declaration: ($) =>
       seq(
         ...modifiers($),
         'union',
         field('name', $.identifier),
         optional($.type_parameters),
-        repeat($.trait),
+        repeat(inlineTrait($)),
         field('body', $.union_body),
       ),
 
     // op ::= trait* "pub"? "op" name "(" (param ":")? type? ")" ( ":" type )?
-    //        trait* impl?
-    // Trailing traits bind greedily to the operation (mirrors the hand-written
-    // parser), so a "@" after the signature never starts the next declaration.
+    //        inline_trait* impl?
+    // Traits above the op belong to it, like any declaration's; only a trait
+    // continuing the signature line binds after it, so a "@" on the next line
+    // always starts the next declaration.
     operation_declaration: ($) => seq(...modifiers($), $._operation_core),
 
-    // The signature and its trailing traits, without the leading modifiers: an
-    // operation inside an entry body takes neither traits above it nor "pub",
-    // because a trait written there belongs to the item before it. The input
-    // may be named ("ref: note_ref"), which gives ".ref" references their
-    // provenance; the bare type form is kept for the older sources.
+    // The op inside an entry body: its traits above it, no "pub". Aliased to
+    // operation_declaration by struct_body so both positions get one node.
+    _entry_operation: ($) => seq(repeat($.trait), $._operation_core),
+
+    // The signature and its inline traits, without the leading modifiers. The
+    // input may be named ("ref: note_ref"), which gives ".ref" references
+    // their provenance; the bare type form is kept for the older sources.
     _operation_core: ($) =>
       prec.right(
         seq(
@@ -108,7 +119,7 @@ export default grammar({
           ),
           ')',
           optional(seq(':', field('output', $._type))),
-          repeat($.trait),
+          repeat(inlineTrait($)),
           optional(field('body', $.operation_impl)),
         ),
       ),
@@ -385,22 +396,27 @@ export default grammar({
       seq(
         '{',
         repeat(
-          choice($.member, alias($._operation_core, $.operation_declaration), ','),
+          choice($.member, alias($._entry_operation, $.operation_declaration), ','),
         ),
         '}',
       ),
 
-    // member ::= name ":" type ( trait | "=" (match | call | handle_call) )*
-    // The value is a selection table, a library call ("= ns.fn(...)") or a
-    // handle method call ("= .provider.get()"); a trait may sit before or
-    // after it ("@with = ns.fn(...)" reads as well as "= ns.fn(...) @with"),
-    // which is why the two interleave here.
+    // member ::= trait* name ":" type ( inline_trait | "=" (match | call | handle_call) )*
+    // Traits above the member belong to it. On its line, the value is a
+    // selection table, a library call ("= ns.fn(...)") or a handle method
+    // call ("= .provider.get()"); a trait may sit before or after it
+    // ("@with = ns.fn(...)" reads as well as "= ns.fn(...) @with"), which is
+    // why the two interleave here. prec.right keeps an inline "@" after the
+    // type on this member rather than opening the next one.
     member: ($) =>
-      seq(
-        field('name', $.identifier),
-        ':',
-        field('type', $._type),
-        repeat(choice($.trait, $._member_value)),
+      prec.right(
+        seq(
+          repeat($.trait),
+          field('name', $.identifier),
+          ':',
+          field('type', $._type),
+          repeat(choice(inlineTrait($), $._member_value)),
+        ),
       ),
 
     _member_value: ($) =>
@@ -453,24 +469,32 @@ export default grammar({
     field_reference: ($) =>
       seq('.', alias($.identifier, $.field_name), repeat(seq('.', alias($.identifier, $.field_name)))),
 
-    enum_body: ($) => seq('{', commaSep($.enum_case), '}'),
+    // Cases and variants are whitespace-separated like members; commas are
+    // tolerated the way the hand-written parser skips them.
+    enum_body: ($) => seq('{', repeat(choice($.enum_case, ',')), '}'),
 
-    // case ::= name ("=" int)? trait*
+    // case ::= trait* name ("=" int)? inline_trait*
     enum_case: ($) =>
-      seq(
-        field('name', $.identifier),
-        optional(seq('=', field('value', $.integer))),
-        repeat($.trait),
+      prec.right(
+        seq(
+          repeat($.trait),
+          field('name', $.identifier),
+          optional(seq('=', field('value', $.integer))),
+          repeat(inlineTrait($)),
+        ),
       ),
 
-    union_body: ($) => seq('{', commaSep($.variant), '}'),
+    union_body: ($) => seq('{', repeat(choice($.variant, ',')), '}'),
 
-    // variant ::= name ( "(" type ")" )? trait*
+    // variant ::= trait* name ( "(" type ")" )? inline_trait*
     variant: ($) =>
-      seq(
-        field('name', $.identifier),
-        optional($.variant_payload),
-        repeat($.trait),
+      prec.right(
+        seq(
+          repeat($.trait),
+          field('name', $.identifier),
+          optional($.variant_payload),
+          repeat(inlineTrait($)),
+        ),
       ),
 
     variant_payload: ($) => seq('(', field('type', $._type), ')'),
@@ -540,9 +564,25 @@ export default grammar({
     // trait ::= "@" name ("::" name)* ( "(" arg ("," arg)* ")" )?
     // The "::" segments name a builtin catalog entry (e.g. @str::trim). The
     // frontend keeps the separator inside the trait id, so the whole path is one
-    // token here too.
-    trait: ($) =>
-      seq('@', field('name', $.trait_name), optional($.trait_arguments)),
+    // token here too. A leading position (before a declaration or a body
+    // item) takes a trait on either kind of line; an inline position (after a
+    // signature, a member, a case, a variant, or a union head) takes only the
+    // `_inline_trait` form, through `inlineTrait`.
+    trait: ($) => choice($._own_line_trait, $._inline_trait),
+
+    _own_line_trait: ($) =>
+      seq(
+        alias($._own_line_at, '@'),
+        field('name', $.trait_name),
+        optional($.trait_arguments),
+      ),
+
+    _inline_trait: ($) =>
+      seq(
+        alias($._inline_at, '@'),
+        field('name', $.trait_name),
+        optional($.trait_arguments),
+      ),
 
     trait_name: ($) =>
       token(seq(/[A-Za-z_][A-Za-z0-9_]*/, repeat(seq('::', /[A-Za-z_][A-Za-z0-9_]*/)))),

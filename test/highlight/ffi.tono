@@ -65,12 +65,12 @@ pub struct client {
 //                        ^ property
 //                                 ^ function.call
 //                                       ^ property
+  @header("Authorization", auth.sign(.request))
+//                         ^ module
+//                              ^ function.call
+//                                    ^ property
   op publish(payload: note): ack
 //   ^ function
-    @header("Authorization", auth.sign(.request))
-//                           ^ module
-//                                ^ function.call
-//                                      ^ property
     impl .bus.send("notes", .payload.body)
 //  ^ keyword
 //        ^ property

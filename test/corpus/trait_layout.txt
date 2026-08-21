@@ -1,0 +1,214 @@
+================================================================================
+A trait on its own line belongs to the item after it
+================================================================================
+
+pub struct client {
+  endpoint: string @env("EP")
+  @doc("reads")
+  @errors(overloaded)
+  op fetch(ref: note_ref): note
+  @doc("a field")
+  token: string @env("T")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))
+      (operation_declaration
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))))
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier)))
+      (member
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))
+
+================================================================================
+An inline trait stays with its line, even before the next item
+================================================================================
+
+struct s { a: i64 @range(min: 0) b: i64 @doc("b") }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (key_value
+                (identifier)
+                (integer))))))
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))
+
+================================================================================
+An own-line trait after an op starts the next declaration
+================================================================================
+
+op ping() @doc("inline")
+@doc("the struct")
+struct s { x: i64 }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (operation_declaration
+    (identifier)
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string)))))
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+A comment between the item and its trait keeps the trait on its own line
+================================================================================
+
+struct s {
+  a: i64
+  // what b is for
+  @doc("b")
+  b: i64
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type))
+      (comment)
+      (member
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (identifier)
+        (primitive_type)))))
+
+================================================================================
+Enum cases and union variants take traits above or inline
+================================================================================
+
+enum e {
+  @doc("a")
+  a
+  b @doc("b")
+}
+
+union u @discriminator("k") {
+  @doc("a")
+  a(x)
+  b(y) @doc("b")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    (identifier)
+    (enum_body
+      (enum_case
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (identifier))
+      (enum_case
+        (identifier)
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string)))))))
+  (union_declaration
+    (identifier)
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))))
+    (union_body
+      (variant
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))
+        (identifier)
+        (variant_payload
+          (named_type
+            (type_identifier))))
+      (variant
+        (identifier)
+        (variant_payload
+          (named_type
+            (type_identifier)))
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (string))))))))

@@ -666,8 +666,8 @@ pub struct client {
   bus: bus.publisher @with = bus.connect(.config.endpoint, .config.token)
   spare: bus.publisher = bus.connect(.config.endpoint, .config.token) @with
 
+  @errors(overloaded)
   op publish(payload: note): ack
-    @errors(overloaded)
     impl .bus.send("notes", .payload.body)
 }
 
@@ -740,17 +740,17 @@ pub struct client {
         (trait
           (trait_name)))
       (operation_declaration
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
         (trait
           (trait_name)
           (trait_arguments
             (trait_argument
               (identifier))))
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))
         (operation_impl
           (handle_method_call
             (field_reference
@@ -878,10 +878,10 @@ The assembled request bound to a trait argument through a library call
 pub struct client {
   endpoint: string @env("ENDPOINT")
 
+  @http(method: "POST", path: "/notes", endpoint: .endpoint)
+  @body(.payload)
+  @header("Authorization", auth.sign(.request))
   op publish(payload: note): ack
-    @http(method: "POST", path: "/notes", endpoint: .endpoint)
-    @body(.payload)
-    @header("Authorization", auth.sign(.request))
 }
 
 --------------------------------------------------------------------------------
@@ -900,12 +900,6 @@ pub struct client {
             (trait_argument
               (string)))))
       (operation_declaration
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
         (trait
           (trait_name)
           (trait_arguments
@@ -939,7 +933,13 @@ pub struct client {
                 (identifier)
                 (library_call_arguments
                   (field_reference
-                    (field_name)))))))))))
+                    (field_name)))))))
+        (identifier)
+        (identifier)
+        (named_type
+          (type_identifier))
+        (named_type
+          (type_identifier))))))
 
 ================================================================================
 Stubbing a library function and a handle method in a declared test

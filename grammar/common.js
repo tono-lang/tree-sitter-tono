@@ -16,3 +16,8 @@ export function commaSep1(rule) {
 // Leading declaration modifiers shared by every declaration: any number of
 // traits written before the keyword, then an optional `pub`.
 export const modifiers = ($) => [repeat($.trait), optional($.visibility)];
+
+/** A trait continuing the current line, shown as an ordinary `trait` node. */
+export function inlineTrait($) {
+  return alias($._inline_trait, $.trait);
+}
