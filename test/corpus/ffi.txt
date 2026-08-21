@@ -1176,3 +1176,80 @@ ext mathkit {
                     (class_reference
                       (foreign_type_name))))))
             (sync_marker)))))))
+
+================================================================================
+Map literal as a call argument
+================================================================================
+
+ext mathkit {
+  go: "tono-ext-fixture/mathkit"
+
+  extern from_table(entries: map[string]float): float {
+    go { call: "FromTable"(entries, { "scale": 2, "opts": "WithScale"({}) }) }
+  }
+}
+
+pub struct client {
+  answer: float @arg
+  table: float = mathkit.from_table({ "answer": .answer, "other": 1.5 })
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (library_path
+        (language_name)
+        (string))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (map_type
+              (primitive_type)
+              (primitive_type))))
+        (primitive_type)
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_symbol)
+              (library_call_arguments
+                (parameter_name)
+                (call_argument_map
+                  (call_argument_map_entry
+                    (string)
+                    (integer))
+                  (call_argument_map_entry
+                    (string)
+                    (nested_call
+                      (foreign_symbol)
+                      (library_call_arguments
+                        (call_argument_map))))))))))))
+  (struct_declaration
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type)
+        (trait
+          (trait_name)))
+      (member
+        (identifier)
+        (primitive_type)
+        (library_call
+          (library_name)
+          (identifier)
+          (library_call_arguments
+            (call_argument_map
+              (call_argument_map_entry
+                (string)
+                (field_reference
+                  (field_name)))
+              (call_argument_map_entry
+                (string)
+                (float_literal)))))))))
