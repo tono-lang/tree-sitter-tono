@@ -275,12 +275,16 @@ export const libraryRules = {
   // from_formula(.expr, ["WithPrecision"(4)]); "type" name is a class
   // reference: a declared opaque handle passed as a value, for a library
   // that takes the class itself and constructs it, e.g.
-  // "instantiate"(type answer_calculator).
+  // "instantiate"(type answer_calculator); a "{" string ":" call_arg,* "}"
+  // map literal feeds a map[string]V logical parameter at its call site,
+  // e.g. from_table({ "answer": .answer }). A bare "{" can only open a map
+  // (a struct literal is always preceded by its type name).
   _call_argument: ($) =>
     choice(
       $.field_reference,
       $.nested_call,
       $.call_argument_list,
+      $.call_argument_map,
       $.class_reference,
       $.string,
       $.integer,
@@ -299,6 +303,11 @@ export const libraryRules = {
     ),
 
   call_argument_list: ($) => seq('[', commaSep($._call_argument), ']'),
+
+  call_argument_map: ($) => seq('{', commaSep($.call_argument_map_entry), '}'),
+
+  call_argument_map_entry: ($) =>
+    seq(field('key', $.string), ':', field('value', $._call_argument)),
 
   struct_literal: ($) =>
     seq(field('type', alias($.identifier, $.type_identifier)), field('body', $.struct_literal_body)),
