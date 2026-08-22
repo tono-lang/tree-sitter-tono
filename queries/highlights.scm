@@ -23,12 +23,10 @@
 ; The selection table reads as a conditional: it is the only branching form.
 (match_keyword) @keyword.conditional
 
-; Foreign libraries. "extern" and "type" are keywords only inside an ext
-; body, the binding words only inside a language block, "impl" only after an
-; op's traits; everywhere else they lex as ordinary identifiers.
+; Foreign libraries. The binding words are keywords only inside a language
+; block, "impl" only after an op's traits; everywhere else they lex as
+; ordinary identifiers.
 [
-  "extern"
-  "type"
   "impl"
 ] @keyword
 
@@ -36,14 +34,7 @@
   "call"
   "yields"
   "returns"
-  "errors"
 ] @keyword
-
-; The convention markers name a departure from the target's own calling
-; convention, so they read as modifiers, like "pub".
-(sync_marker) @keyword.modifier
-(infallible_marker) @keyword.modifier
-(ctx_marker) @keyword.modifier
 
 ; The reserved error position in a yields list is a builtin, not a tono type.
 (error_sentinel) @type.builtin
@@ -78,17 +69,15 @@
 (extern_parameter name: (identifier) @variable.parameter)
 (yields_position name: (identifier) @variable)
 (returns_field name: (identifier) @property)
-(error_mapping type: (type_identifier) @type)
 (library_call function: (identifier) @function.call)
 (parameter_name) @variable.parameter
 (struct_literal_field name: (identifier) @property)
 (stub_target function: (identifier) @function)
 
-; The foreign symbol is a string literal by design: the origin of a call must
-; be visible, so it must never take the color of a tono identifier. It gets
-; the special-string reading rather than the plain one.
-(foreign_symbol) @string.special
-(foreign_type) @string.special
+; A foreign spelling is the library's own text, never a tono name and never
+; a string: it gets the special-string reading so the origin stays visible
+; and distinct from text that crosses as data.
+(foreign_spelling) @string.special
 
 (type_parameter) @type.parameter
 

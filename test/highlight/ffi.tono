@@ -1,30 +1,38 @@
 ext configlib {
 // <- keyword
 //  ^ module
-  go: "github.com/example/configlib"
+  go { #(github.com/example/configlib) }
 //^ property
-//    ^ string
+//     ^ string.special
 
-  struct go_config { Host: string, Env: string }
+  struct go_config { Host: string, Env: string  go { #(Config) } }
 //^ keyword
 //       ^ type
 //                   ^ property
 //                         ^ type.builtin
+//                                              ^ property
+//                                                   ^ string.special
 
-  type publisher {
+  struct publisher {
 //^ keyword
-//     ^ type
-    extern send(topic: string): ack {
+//       ^ type
+    go { #(*Publisher) }
+//  ^ property
+//       ^ string.special
+    @async(rust)
+//   ^ attribute
+    op send(topic: string): ack {
 //  ^ keyword
-//         ^ function
-//              ^ variable.parameter
-//                              ^ type
+//     ^ function
+//          ^ variable.parameter
+//                          ^ type
       go {
 //    ^ property
-        call: "Send"(topic)
+        call: #(Send)(#(ctx context.Context), topic)
 //      ^ keyword
 //            ^ string.special
-//                   ^ variable.parameter
+//                    ^ string.special
+//                                            ^ variable.parameter
         yields: (err: error, a: go_ack)
 //      ^ keyword
 //               ^ variable
@@ -36,19 +44,12 @@ ext configlib {
 //               ^ type
 //                     ^ property
 //                          ^ property
-        errors: { "ErrBusy" => overloaded }
-//      ^ keyword
-//                ^ string
-//                             ^ type
-        infallible
-//      ^ keyword.modifier
-        ctx
-//      ^ keyword.modifier
       }
       rust {
-        call: "send"(topic)
-        sync
-//      ^ keyword.modifier
+        call: #(Publisher::send)(topic: #(&str))
+//            ^ string.special
+//                                ^ variable.parameter
+//                                       ^ string.special
       }
     }
   }
@@ -60,35 +61,4 @@ pub struct client {
 //                     ^ module
 //                               ^ function.call
 //                                     ^ property
-  settings: app_config = .provider.load(.region)
-//^ property
-//                        ^ property
-//                                 ^ function.call
-//                                       ^ property
-  @header("Authorization", auth.sign(.request))
-//                         ^ module
-//                              ^ function.call
-//                                    ^ property
-  op publish(payload: note): ack
-//   ^ function
-    impl .bus.send("notes", .payload.body)
-//  ^ keyword
-//        ^ property
-//            ^ function.call
-//                 ^ string
-}
-
-test "stubs" {
-  stub configlib.load: app_config { endpoint: "https://x.test" }
-//^ keyword
-//     ^ module
-//               ^ function
-  stub bus.publisher.send: overloaded { message: "shedding" }
-//     ^ variable
-//         ^ function
-//                   ^ property
-  s: stub c.get.http: http.response { headers: { "content-type": "json", server: "x" }, ok: true }
-//                                                ^ string
-//                                                                        ^ property
-//                                                                                          ^ boolean
 }

@@ -2,11 +2,16 @@
 // @ts-check
 
 // The foreign-library surface: `ext <name> { ... }` blocks with per-language
-// module paths, foreign structs, opaque handle types and `extern` bindings,
-// plus the library-call forms the rest of the language reuses (an entry
-// field's `= ns.fn(...)` source, an op's `impl` body, a trait argument).
+// module paths, foreign structs and opaque handles (both `struct`), and `op`
+// bindings, plus the library-call forms the rest of the language reuses (an
+// entry field's `= ns.fn(...)` source, an op's `impl` body, a trait argument).
 // Split out of grammar.js only to keep each file readable; the rules are
 // merged into the same grammar and reference the core rules through `$`.
+//
+// Two rules carry the block: a foreign spelling is `#(...)`, a raw region
+// up to the matching parenthesis (`foreign_spelling` in grammar.js), never
+// a string; and everything specific to one language lives in that
+// language's block, at every level (the header, a struct, a field, an op).
 
 import { commaSep, commaSep1, modifiers } from './common.js';
 
@@ -17,8 +22,9 @@ export const libraryRules = {
   // library ::= trait* "pub"? "ext" name "{" item* "}"
   // The library form is told apart from the legacy "ext kind name" form by
   // what follows the first word: a "{" opens a library body, another word
-  // is the legacy kind. Items are the per-language module paths, the
-  // foreign structs, the opaque handle types and the free externs.
+  // is the legacy kind. Items are the per-language module paths (a
+  // language block with only the head), the foreign structs and handles,
+  // and the free ops.
   library_declaration: ($) =>
     seq(
       ...modifiers($),
@@ -32,9 +38,8 @@ export const libraryRules = {
       '{',
       repeat(
         choice(
-          $.library_path,
+          $.language_block,
           $.foreign_struct,
-          $.opaque_type,
           $.extern_declaration,
           ',',
         ),
@@ -42,16 +47,33 @@ export const libraryRules = {
       '}',
     ),
 
-  // path ::= lang ":" string — where the library lives in that target.
-  library_path: ($) =>
+  // lang_block ::= lang "{" spelling (name ":" spelling)* "}"
+  // The first element is positional and names the foreign thing; what it is
+  // depends on where the block sits: the module path in the ext header, the
+  // foreign type of a foreign form, the whole storage type of an opaque
+  // handle, the sentinel (or error type) of an error struct. The keyed
+  // entries name a tono field and give its foreign spelling.
+  language_block: ($) =>
     seq(
       field('language', alias($.identifier, $.language_name)),
-      ':',
-      field('path', $.string),
+      '{',
+      field('head', $.foreign_spelling),
+      repeat(choice($.language_block_field, ',')),
+      '}',
     ),
 
-  // struct ::= "struct" name "{" (field ",")* "}" — a foreign shape, its
-  // field names kept verbatim (never normalized). Never a top-level shape.
+  language_block_field: ($) =>
+    seq(
+      field('name', alias($.identifier, $.foreign_field_name)),
+      ':',
+      field('spelling', $.foreign_spelling),
+    ),
+
+  // struct ::= "struct" name "{" (field | lang_block | trait* op)* "}"
+  // One grammar for both shapes the block declares: fields make it a
+  // foreign form (data the target reads), their absence makes it an opaque
+  // handle (a thing the target calls, its ops methods with an implicit
+  // receiver). Each language block spells the type as that target holds it.
   foreign_struct: ($) =>
     seq(
       'struct',
@@ -60,7 +82,18 @@ export const libraryRules = {
     ),
 
   foreign_struct_body: ($) =>
-    seq('{', repeat(choice($.foreign_field, ',')), '}'),
+    seq(
+      '{',
+      repeat(
+        choice(
+          $.foreign_field,
+          $.language_block,
+          $.extern_declaration,
+          ',',
+        ),
+      ),
+      '}',
+    ),
 
   foreign_field: ($) =>
     seq(
@@ -69,57 +102,16 @@ export const libraryRules = {
       field('type', $._type),
     ),
 
-  // type ::= "type" name instance? "interface"? "{" extern* "}" — an opaque
-  // handle: called, never read, never on the wire. Its externs are methods
-  // with an implicit receiver. The "interface" marker declares the foreign
-  // type is abstract (a Go interface, held by value), not a concrete struct
-  // held by pointer.
-  opaque_type: ($) =>
-    seq(
-      'type',
-      field('name', alias($.identifier, $.foreign_type_name)),
-      optional(field('instance', $.opaque_type_instance)),
-      optional(field('shape', alias('interface', $.foreign_type_shape))),
-      field('body', $.opaque_type_body),
-    ),
-
-  // instance ::= "(" names "," type ")"
-  // names    ::= string | lang ":" string ("," lang ":" string)*
-  // Which instantiation of a foreign generic type this opaque handle names:
-  // the foreign type's own name (a string, so the origin stays visible) and
-  // the tono argument it is monomorphized with. One bare string names the
-  // type for every language; the keyed form names it per language, in the
-  // same "lang: string" shape the library's module paths use, for the case
-  // where the targets spell the same logical type differently.
-  opaque_type_instance: ($) =>
-    seq(
-      '(',
-      choice(
-        seq(field('foreign_name', $.string), ','),
-        repeat1(seq($.opaque_type_instance_name, ','))
-      ),
-      field('argument', $._type),
-      ')',
-    ),
-
-  // One "lang: string" entry of the keyed instantiation-name form.
-  opaque_type_instance_name: ($) =>
-    seq(
-      field('language', alias($.identifier, $.language_name)),
-      ':',
-      field('name', $.string),
-    ),
-
-  opaque_type_body: ($) =>
-    seq('{', repeat(choice($.extern_declaration, ',')), '}'),
-
-  // extern ::= "extern" name "(" (param ":" type),* ")" ":" type
-  //            "{" lang_block* "}"
+  // op ::= trait* "op" name "(" (param ":" type),* ")" ":" type
+  //        "{" lang_block* "}"
   // The logical signature, in tono types; each language block below binds
-  // it to the real call.
+  // it to the real call. The traits are the ones the rest of the language
+  // already has: @async listing the targets where the foreign call is
+  // asynchronous, @errors, @doc.
   extern_declaration: ($) =>
     seq(
-      'extern',
+      repeat($.trait),
+      'op',
       field('name', $.identifier),
       field('parameters', $.extern_parameters),
       ':',
@@ -129,71 +121,42 @@ export const libraryRules = {
 
   extern_parameters: ($) => seq('(', commaSep($.extern_parameter), ')'),
 
-  // param ::= name ":" type "variadic"? — the bare "variadic" marker opts
-  // this logical parameter into accepting a collection of values, the
-  // caller passing a list for it (Go's own "opts ...Option", Rust's
-  // "Vec<T>", TypeScript's "T[]", each materializing it in their own idiom).
   extern_parameter: ($) =>
-    seq(
-      field('name', $.identifier),
-      ':',
-      field('type', $._type),
-      optional(field('variadic', $.variadic_marker)),
-    ),
-
-  variadic_marker: ($) => 'variadic',
+    seq(field('name', $.identifier), ':', field('type', $._type)),
 
   extern_body: ($) => seq('{', repeat(choice($.extern_language_block, ',')), '}'),
 
-  // lang_block ::= lang "{" (call | yields | returns | errors | sync |
-  //                          infallible | ctx | new)* "}"
-  // "sync" and "infallible" mark a call that steps out of the target's
-  // convention (a blocking Rust call, a Go call with no error return); "ctx"
-  // marks a call that receives the target's own cancellation/deadline
-  // context in its idiomatic position; "new" opts the call into
-  // TypeScript's own class-construction syntax. The convention itself is
-  // never written down.
+  // lang_block ::= lang "{" (call | yields | returns)* "}"
+  // Anything the target needs beyond these three lines is a foreign
+  // spelling inside them; the convention itself is never written down.
   extern_language_block: ($) =>
     seq(
       field('language', alias($.identifier, $.language_name)),
       '{',
       repeat(
-        choice(
-          $.call_binding,
-          $.yields_binding,
-          $.returns_binding,
-          $.errors_binding,
-          $.sync_marker,
-          $.infallible_marker,
-          $.ctx_marker,
-          $.new_marker,
-          ',',
-        ),
+        choice($.call_binding, $.yields_binding, $.returns_binding, ','),
       ),
       '}',
     ),
 
-  // call ::= "call" ":" (string ".")? string "(" call_arg,* ")"
-  // The foreign name is a string literal by design (the origin must be
-  // visible), so it gets its own node and never reads as a tono name. Two
-  // strings joined by a dot spell a static method: the first is the foreign
-  // type the call is qualified by (a receiver that is a type, not a value,
-  // hence a string and not a reference), the second the method on it.
+  // call ::= "call" ":" spelling "(" call_arg,* ")"
+  // The callee is one foreign spelling, verbatim: a function, a generic
+  // instantiation (#(FromConstant[float64])), a class under new
+  // (#(new ConstantCalculator)), a static method on a type
+  // (#(FormulaCalculator::parse)).
   call_binding: ($) =>
     seq(
       'call',
       ':',
-      optional(
-        seq(field('receiver', alias($.string, $.foreign_type)), '.'),
-      ),
-      field('symbol', alias($.string, $.foreign_symbol)),
+      field('symbol', $.foreign_spelling),
       field('arguments', $.library_call_arguments),
     ),
 
-  // yields ::= "yields" ":" "(" (name ":" (type | "error")),+ ")"
+  // yields ::= "yields" ":" "(" (name ":" (type | "error" | spelling)),+ ")"
   // Names what the foreign call returns so "returns:" can project from it;
   // "error" is the reserved sentinel for the error position and exists
-  // nowhere else in the grammar.
+  // nowhere else in the grammar; a spelling declares what the call really
+  // returns, for the target to coerce into the declared logical type.
   yields_binding: ($) =>
     seq('yields', ':', '(', commaSep1($.yields_position), ')'),
 
@@ -201,7 +164,7 @@ export const libraryRules = {
     seq(
       field('name', $.identifier),
       ':',
-      field('type', choice($.error_sentinel, $._type)),
+      field('type', choice($.error_sentinel, $.foreign_spelling, $._type)),
     ),
 
   error_sentinel: ($) => 'error',
@@ -226,27 +189,6 @@ export const libraryRules = {
       field('value', choice($.field_reference, $.match_expression)),
     ),
 
-  // errors ::= "errors" ":" "{" (string "=>" name),* "}" — a foreign
-  // sentinel mapped onto a declared error shape, per language.
-  errors_binding: ($) => seq('errors', ':', field('body', $.errors_body)),
-
-  errors_body: ($) => seq('{', repeat(choice($.error_mapping, ',')), '}'),
-
-  error_mapping: ($) =>
-    seq(
-      field('sentinel', $.string),
-      '=>',
-      field('type', alias($.identifier, $.type_identifier)),
-    ),
-
-  sync_marker: ($) => 'sync',
-
-  infallible_marker: ($) => 'infallible',
-
-  ctx_marker: ($) => 'ctx',
-
-  new_marker: ($) => 'new',
-
   // ── Library calls ───────────────────────────────────────────────────
 
   // call ::= ns "." fn "(" call_arg,* ")" — a call into a declared library
@@ -263,25 +205,25 @@ export const libraryRules = {
   library_call_arguments: ($) =>
     seq('(', commaSep($._call_argument), ')'),
 
-  // call_arg ::= ref | literal | name | name "{" field ":" value,* "}"
-  //            | string "(" call_arg,* ")" | "[" call_arg,* "]"
-  // A bare name is the caller's own parameter; the struct literal maps the
-  // arguments into a foreign shape (the counterpart of "returns:"); a
-  // string immediately followed by "(" is a nested foreign-symbol call
-  // (no declared "extern" to resolve against, just a symbol and its own
-  // arguments), e.g. "WithPrecision"(precision) inside call:
-  // "FromFormula"(expr, "WithPrecision"(precision)); a "[" ... "]" list
-  // feeds a variadic logical parameter at its call site, e.g.
-  // from_formula(.expr, ["WithPrecision"(4)]); "type" name is a class
-  // reference: a declared opaque handle passed as a value, for a library
-  // that takes the class itself and constructs it, e.g.
-  // "instantiate"(type answer_calculator).
+  // call_arg ::= ref | literal | name | name ":" spelling | spelling
+  //            | spelling "(" call_arg,* ")" | name "{" field ":" value,* "}"
+  //            | "[" call_arg,* "]"
+  // A bare name is the caller's own parameter (or, in a call: line, a
+  // declared handle passed as a class reference; the checker tells them
+  // apart); "name: #(...)" is the parameter under the foreign spelling it
+  // crosses as (values: #(Vec<f64>), calcs: #(...Calculator[float64]));
+  // a bare spelling is a position the target binds itself
+  // (#(ctx context.Context)); a spelling immediately followed by "(" is a
+  // nested foreign call (#(WithPrecision)(precision)); the struct literal
+  // maps the arguments into a foreign form (the counterpart of "returns:");
+  // a "[" ... "]" list feeds a collection parameter at its call site.
   _call_argument: ($) =>
     choice(
       $.field_reference,
       $.nested_call,
+      $.spelled_parameter,
+      $.foreign_spelling,
       $.call_argument_list,
-      $.class_reference,
       $.string,
       $.integer,
       $.float_literal,
@@ -289,12 +231,16 @@ export const libraryRules = {
       alias($.identifier, $.parameter_name),
     ),
 
-  class_reference: ($) =>
-    seq('type', field('handle', alias($.identifier, $.foreign_type_name))),
+  spelled_parameter: ($) =>
+    seq(
+      field('name', alias($.identifier, $.parameter_name)),
+      ':',
+      field('spelling', $.foreign_spelling),
+    ),
 
   nested_call: ($) =>
     seq(
-      field('symbol', alias($.string, $.foreign_symbol)),
+      field('symbol', $.foreign_spelling),
       field('arguments', $.library_call_arguments),
     ),
 
