@@ -1,17 +1,22 @@
 ================================================================================
-Library block with module paths, foreign structs and a projected extern
+Library block with module paths, a foreign form with a language block, and a projected op
 ================================================================================
 
 ext configlib {
-  go: "github.com/example/configlib"
-  ts: "@example/configlib"
+  go { #(github.com/example/configlib) }
+  ts { #(@example/configlib) }
 
-  struct go_config { Host: string, DevHost: string, Env: string }
-  struct ts_config { host: string, token: string }
+  struct go_config {
+    Host: string, DevHost: string, Env: string
 
-  extern load(service: string, region: string): app_config {
+    go { #(Config) }
+  }
+  struct ts_config { host: string, token: string  ts { #(Config)  token: #(string) } }
+
+  @async(ts)
+  op load(service: string, region: string): app_config {
     go {
-      call: "Load"(service, region)
+      call: #(Load)(service, region)
       yields: (cfg: go_config)
       returns: app_config {
         endpoint: match .cfg.Env { "prod" => .cfg.Host, _ => .cfg.DevHost }
@@ -19,7 +24,7 @@ ext configlib {
       }
     }
     ts {
-      call: "load"(region, service)
+      call: #(load)(region, service)
       yields: (cfg: ts_config)
       returns: app_config { endpoint: .cfg.host, token: .cfg.token }
     }
@@ -32,12 +37,14 @@ ext configlib {
   (library_declaration
     (library_name)
     (library_body
-      (library_path
+      (language_block
         (language_name)
-        (string))
-      (library_path
+        (foreign_spelling
+          (spelling_text)))
+      (language_block
         (language_name)
-        (string))
+        (foreign_spelling
+          (spelling_text)))
       (foreign_struct
         (foreign_type_name)
         (foreign_struct_body
@@ -49,7 +56,11 @@ ext configlib {
             (primitive_type))
           (foreign_field
             (foreign_field_name)
-            (primitive_type))))
+            (primitive_type))
+          (language_block
+            (language_name)
+            (foreign_spelling
+              (spelling_text)))))
       (foreign_struct
         (foreign_type_name)
         (foreign_struct_body
@@ -58,8 +69,21 @@ ext configlib {
             (primitive_type))
           (foreign_field
             (foreign_field_name)
-            (primitive_type))))
+            (primitive_type))
+          (language_block
+            (language_name)
+            (foreign_spelling
+              (spelling_text))
+            (language_block_field
+              (foreign_field_name)
+              (foreign_spelling
+                (spelling_text))))))
       (extern_declaration
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))))
         (identifier)
         (extern_parameters
           (extern_parameter
@@ -74,7 +98,8 @@ ext configlib {
           (extern_language_block
             (language_name)
             (call_binding
-              (foreign_symbol)
+              (foreign_spelling
+                (spelling_text))
               (library_call_arguments
                 (parameter_name)
                 (parameter_name)))
@@ -113,7 +138,8 @@ ext configlib {
           (extern_language_block
             (language_name)
             (call_binding
-              (foreign_symbol)
+              (foreign_spelling
+                (spelling_text))
               (library_call_arguments
                 (parameter_name)
                 (parameter_name)))
@@ -138,27 +164,42 @@ ext configlib {
                     (field_name)))))))))))
 
 ================================================================================
-Language block with the error sentinel, an errors map and a struct-literal argument
+Opaque handle with storage types per language, a method, and spelled call arguments
 ================================================================================
 
-ext store {
-  go: "github.com/example/store"
-  ts: "@example/store"
+ext mathkit {
+  go { #(tono-ext-fixture/mathkit) }
+  ts { #(@tono-ext-fixture/mathkit) }
+  rust { #(mathkit) }
 
-  struct go_body { ID: string, Text: string }
-  struct ts_opts { id: string, retries: i32 }
+  struct calculator {
+    go { #(Calculator[float64]) }
+    ts { #(Calculator<number>) }
+    rust { #(Box<dyn Calculator<f64>>) }
 
-  extern fetch(id: string): fetched {
-    go {
-      call: "Fetch"(id)
-      yields: (err: error, body: go_body, ok: bool)
-      returns: fetched { id: .body.ID, text: .body.Text, verified: .ok }
-      errors: { "ErrBusy" => overloaded, "ErrGone" => not_found }
+    @async(rust)
+    op compute(): float {
+      go { call: #(Compute)(#(ctx context.Context)) }
+      ts { call: #(compute)() }
+      rust { call: #(Calculator::compute)() }
     }
-    ts {
-      call: "fetch"(ts_opts { id: id, retries: 3 })
-      errors: { "BUSY" => overloaded }
-    }
+  }
+
+  op from_constant(value: float): calculator {
+    go { call: #(FromConstant[float64])(value) }
+    ts { call: #(new ConstantCalculator)(value) }
+    rust { call: #(from_constant)(value) }
+  }
+
+  @errors(invalid_expression)
+  op from_formula(expr: string, precision: u8): calculator {
+    go { call: #(FromFormula[float64])(expr, #(WithPrecision)(precision)) }
+    rust { call: #(from_formula)(expr: #(&str), formula_options { precision: precision }) }
+  }
+
+  op from_fallback(strategy: string, calcs: []calculator): calculator {
+    go { call: #(FromFallback[float64])(strategy, calcs: #(...Calculator[float64])) }
+    ts { call: #(FormulaCalculator.parse)(strategy, answer_calculator) }
   }
 }
 
@@ -168,421 +209,103 @@ ext store {
   (library_declaration
     (library_name)
     (library_body
-      (library_path
+      (language_block
         (language_name)
-        (string))
-      (library_path
+        (foreign_spelling
+          (spelling_text)))
+      (language_block
         (language_name)
-        (string))
+        (foreign_spelling
+          (spelling_text)))
+      (language_block
+        (language_name)
+        (foreign_spelling
+          (spelling_text)))
       (foreign_struct
         (foreign_type_name)
         (foreign_struct_body
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))))
-      (foreign_struct
-        (foreign_type_name)
-        (foreign_struct_body
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))))
-      (extern_declaration
-        (identifier)
-        (extern_parameters
-          (extern_parameter
-            (identifier)
-            (primitive_type)))
-        (named_type
-          (type_identifier))
-        (extern_body
-          (extern_language_block
+          (language_block
             (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)))
-            (yields_binding
-              (yields_position
-                (identifier)
-                (error_sentinel))
-              (yields_position
-                (identifier)
-                (named_type
-                  (type_identifier)))
-              (yields_position
-                (identifier)
-                (primitive_type)))
-            (returns_binding
-              (named_type
-                (type_identifier))
-              (returns_body
-                (returns_field
-                  (identifier)
-                  (field_reference
-                    (field_name)
-                    (field_name)))
-                (returns_field
-                  (identifier)
-                  (field_reference
-                    (field_name)
-                    (field_name)))
-                (returns_field
-                  (identifier)
-                  (field_reference
-                    (field_name)))))
-            (errors_binding
-              (errors_body
-                (error_mapping
-                  (string)
-                  (type_identifier))
-                (error_mapping
-                  (string)
-                  (type_identifier)))))
-          (extern_language_block
+            (foreign_spelling
+              (spelling_text)))
+          (language_block
             (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (struct_literal
-                  (type_identifier)
-                  (struct_literal_body
-                    (struct_literal_field
-                      (identifier)
-                      (identifier))
-                    (struct_literal_field
-                      (identifier)
-                      (integer))))))
-            (errors_binding
-              (errors_body
-                (error_mapping
-                  (string)
-                  (type_identifier))))))))))
-
-================================================================================
-Static method: the call's receiver is a foreign type name
-================================================================================
-
-ext quantkit {
-  ts: "@example/quantkit"
-  rust: "quantkit"
-
-  extern parse(expr: string): float {
-    ts { call: "Formula"."parse"(expr) sync }
-    rust { call: "Formula"."parse"(expr) sync }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (library_path
-        (language_name)
-        (string))
-      (extern_declaration
-        (identifier)
-        (extern_parameters
-          (extern_parameter
-            (identifier)
-            (primitive_type)))
-        (primitive_type)
-        (extern_body
-          (extern_language_block
+            (foreign_spelling
+              (spelling_text)))
+          (language_block
             (language_name)
-            (call_binding
-              (foreign_type)
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)))
-            (sync_marker))
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_type)
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)))
-            (sync_marker)))))))
-
-================================================================================
-Convention markers: sync for a blocking Rust call, infallible for a Go call
-================================================================================
-
-ext idgen {
-  go: "github.com/example/idgen"
-  rust: "idgen"
-
-  extern next(prefix: string): string {
-    go {
-      call: "Next"(prefix)
-      infallible
-    }
-    rust {
-      call: "next"(prefix)
-      sync
-    }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (library_path
-        (language_name)
-        (string))
-      (extern_declaration
-        (identifier)
-        (extern_parameters
-          (extern_parameter
-            (identifier)
-            (primitive_type)))
-        (primitive_type)
-        (extern_body
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)))
-            (infallible_marker))
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)))
-            (sync_marker)))))))
-
-================================================================================
-Convention marker: ctx for a foreign handle's own method call
-================================================================================
-
-ext conn {
-  go: "github.com/example/conn"
-
-  type session {
-    extern get(id: string): string {
-      go {
-        call: "Get"(id)
-        ctx
-      }
-    }
-  }
-
-  extern connect(): session {
-    go { call: "Connect"() }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_body
+            (foreign_spelling
+              (spelling_text)))
           (extern_declaration
+            (trait
+              (trait_name)
+              (trait_arguments
+                (trait_argument
+                  (identifier))))
             (identifier)
-            (extern_parameters
-              (extern_parameter
-                (identifier)
-                (primitive_type)))
+            (extern_parameters)
             (primitive_type)
             (extern_body
               (extern_language_block
                 (language_name)
                 (call_binding
-                  (foreign_symbol)
+                  (foreign_spelling
+                    (spelling_text))
                   (library_call_arguments
-                    (parameter_name)))
-                (ctx_marker))))))
-      (extern_declaration
-        (identifier)
-        (extern_parameters)
-        (named_type
-          (type_identifier))
-        (extern_body
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments))))))))
-
-================================================================================
-Opaque handle type with extern methods and a constructor extern
-================================================================================
-
-ext bus {
-  go: "github.com/example/bus"
-
-  struct go_ack { ID: string, OK: bool }
-
-  type publisher {
-    extern send(topic: string, body: string): ack {
-      go {
-        call: "Send"(topic, body)
-        yields: (a: go_ack)
-        returns: ack { id: .a.ID, accepted: .a.OK }
-      }
-    }
-  }
-
-  extern connect(endpoint: string, token: string): publisher {
-    go { call: "Connect"(endpoint, token) }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (foreign_struct
-        (foreign_type_name)
-        (foreign_struct_body
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))
-          (foreign_field
-            (foreign_field_name)
-            (primitive_type))))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_body
-          (extern_declaration
-            (identifier)
-            (extern_parameters
-              (extern_parameter
-                (identifier)
-                (primitive_type))
-              (extern_parameter
-                (identifier)
-                (primitive_type)))
-            (named_type
-              (type_identifier))
-            (extern_body
+                    (foreign_spelling
+                      (spelling_text)))))
               (extern_language_block
                 (language_name)
                 (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments
-                    (parameter_name)
-                    (parameter_name)))
-                (yields_binding
-                  (yields_position
-                    (identifier)
-                    (named_type
-                      (type_identifier))))
-                (returns_binding
-                  (named_type
-                    (type_identifier))
-                  (returns_body
-                    (returns_field
-                      (identifier)
-                      (field_reference
-                        (field_name)
-                        (field_name)))
-                    (returns_field
-                      (identifier)
-                      (field_reference
-                        (field_name)
-                        (field_name))))))))))
-      (extern_declaration
-        (identifier)
-        (extern_parameters
-          (extern_parameter
-            (identifier)
-            (primitive_type))
-          (extern_parameter
-            (identifier)
-            (primitive_type)))
-        (named_type
-          (type_identifier))
-        (extern_body
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (parameter_name)
-                (parameter_name)))))))))
-
-================================================================================
-Opaque handle type instantiating a foreign generic type
-================================================================================
-
-ext cfgkit {
-  go: "github.com/example/cfgkit"
-
-  type source_settings("Source", settings) {
-    extern get(): settings {
-      go { call: "Get"() }
-    }
-  }
-
-  extern new_env_source(service: string, region: string): source_settings {
-    go { call: "NewEnvSource"(service, region) }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_instance
-          (string)
-          (named_type
-            (type_identifier)))
-        (opaque_type_body
-          (extern_declaration
-            (identifier)
-            (extern_parameters)
-            (named_type
-              (type_identifier))
-            (extern_body
+                  (foreign_spelling
+                    (spelling_text))
+                  (library_call_arguments)))
               (extern_language_block
                 (language_name)
                 (call_binding
-                  (foreign_symbol)
+                  (foreign_spelling
+                    (spelling_text))
                   (library_call_arguments)))))))
       (extern_declaration
         (identifier)
         (extern_parameters
           (extern_parameter
             (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name))))))
+      (extern_declaration
+        (trait
+          (trait_name)
+          (trait_arguments
+            (trait_argument
+              (identifier))))
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
             (primitive_type))
           (extern_parameter
             (identifier)
@@ -593,23 +316,84 @@ ext cfgkit {
           (extern_language_block
             (language_name)
             (call_binding
-              (foreign_symbol)
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name)
+                (nested_call
+                  (foreign_spelling
+                    (spelling_text))
+                  (library_call_arguments
+                    (parameter_name))))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (spelled_parameter
+                  (parameter_name)
+                  (foreign_spelling
+                    (spelling_text)))
+                (struct_literal
+                  (type_identifier)
+                  (struct_literal_body
+                    (struct_literal_field
+                      (identifier)
+                      (identifier)))))))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type))
+          (extern_parameter
+            (identifier)
+            (list_type
+              (named_type
+                (type_identifier)))))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name)
+                (spelled_parameter
+                  (parameter_name)
+                  (foreign_spelling
+                    (spelling_text))))))
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
               (library_call_arguments
                 (parameter_name)
                 (parameter_name)))))))))
 
 ================================================================================
-Opaque handle instantiation naming the foreign type per language
+Error struct with language blocks, and a yields position under a foreign spelling
 ================================================================================
 
-ext calckit {
-  go: "github.com/example/calckit"
-  rust: "calckit"
+@errorCode("code", "invalid_expression")
+pub struct invalid_expression {
+  message: string
 
-  type meter(go: "Meter", rust: "Gauge", float) interface {
-    extern read(): float {
-      go { call: "Read"() }
-      rust { call: "read"() }
+  go { #(ErrParse)  message: #(Error()) }
+  rust { #(Error::Parse)  message: #(to_string()) }
+}
+
+ext mathkit {
+  rust { #(mathkit) }
+
+  op from_constant(value: float): calculator {
+    rust {
+      call: #(from_constant)(value)
+      yields: (c: #(ConstantCalculator<f64>), err: error)
     }
   }
 }
@@ -617,56 +401,79 @@ ext calckit {
 --------------------------------------------------------------------------------
 
 (source_file
+  (struct_declaration
+    (trait
+      (trait_name)
+      (trait_arguments
+        (trait_argument
+          (string))
+        (trait_argument
+          (string))))
+    (visibility)
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type))
+      (language_block
+        (language_name)
+        (foreign_spelling
+          (spelling_text))
+        (language_block_field
+          (foreign_field_name)
+          (foreign_spelling
+            (spelling_text))))
+      (language_block
+        (language_name)
+        (foreign_spelling
+          (spelling_text))
+        (language_block_field
+          (foreign_field_name)
+          (foreign_spelling
+            (spelling_text))))))
   (library_declaration
     (library_name)
     (library_body
-      (library_path
+      (language_block
         (language_name)
-        (string))
-      (library_path
-        (language_name)
-        (string))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_instance
-          (opaque_type_instance_name
-            (language_name)
-            (string))
-          (opaque_type_instance_name
-            (language_name)
-            (string))
-          (primitive_type))
-        (foreign_type_shape)
-        (opaque_type_body
-          (extern_declaration
+        (foreign_spelling
+          (spelling_text)))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
             (identifier)
-            (extern_parameters)
-            (primitive_type)
-            (extern_body
-              (extern_language_block
-                (language_name)
-                (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments)))
-              (extern_language_block
-                (language_name)
-                (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments))))))))))
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (parameter_name)))
+            (yields_binding
+              (yields_position
+                (identifier)
+                (foreign_spelling
+                  (spelling_text)))
+              (yields_position
+                (identifier)
+                (error_sentinel)))))))))
 
 ================================================================================
-Entry fields sourced from library calls, an injectable handle and an op impl body
+Library calls and handle method calls from an entry
 ================================================================================
 
 pub struct client {
   service: string @env("SERVICE_NAME")
-  region: string @arg
-
   config: app_config = configlib.load(.service, .region)
-  bus: bus.publisher @with = bus.connect(.config.endpoint, .config.token)
-  spare: bus.publisher = bus.connect(.config.endpoint, .config.token) @with
+  bus: companybus.publisher @with = companybus.connect(.config.endpoint, .config.token)
+  combined: mathkit.calculator = mathkit.from_fallback("first", [.constant, .formula])
 
-  @errors(overloaded)
+  @header("Authorization", companyauth.sign(.request))
   op publish(payload: note): ack
     impl .bus.send("notes", .payload.body)
 }
@@ -688,11 +495,6 @@ pub struct client {
               (string)))))
       (member
         (identifier)
-        (primitive_type)
-        (trait
-          (trait_name)))
-      (member
-        (identifier)
         (named_type
           (type_identifier))
         (library_call
@@ -731,197 +533,13 @@ pub struct client {
           (library_name)
           (identifier)
           (library_call_arguments
-            (field_reference
-              (field_name)
-              (field_name))
-            (field_reference
-              (field_name)
-              (field_name))))
-        (trait
-          (trait_name)))
-      (operation_declaration
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
-              (identifier))))
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
-        (operation_impl
-          (handle_method_call
-            (field_reference
-              (field_name)
-              (field_name))
-            (library_call_arguments
-              (string)
+            (string)
+            (call_argument_list
               (field_reference
-                (field_name)
-                (field_name)))))))))
-
-================================================================================
-An entry field sourced from a handle method call, feeding several operations
-================================================================================
-
-pub struct client {
-  provider: kit.provider = kit.new_provider("kvs")
-  config: app_config = .provider.get()
-  region: string @arg
-  scoped: app_config @with = .provider.get_for(.region)
-
-  op read(i: item_ref): item @http(method: "GET", path: "/items/{.i.id}", endpoint: .config.endpoint)
-  op write(i: item): item @http(method: "PUT", path: "/items", endpoint: .config.endpoint)
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (struct_declaration
-    (visibility)
-    (identifier)
-    (struct_body
-      (member
-        (identifier)
-        (named_type
-          (qualified_type
-            (module_qualifier)
-            (type_identifier)))
-        (library_call
-          (library_name)
-          (identifier)
-          (library_call_arguments
-            (string))))
-      (member
-        (identifier)
-        (named_type
-          (type_identifier))
-        (handle_method_call
-          (field_reference
-            (field_name)
-            (field_name))
-          (library_call_arguments)))
-      (member
-        (identifier)
-        (primitive_type)
-        (trait
-          (trait_name)))
-      (member
-        (identifier)
-        (named_type
-          (type_identifier))
-        (trait
-          (trait_name))
-        (handle_method_call
-          (field_reference
-            (field_name)
-            (field_name))
-          (library_call_arguments
-            (field_reference
-              (field_name)))))
-      (operation_declaration
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
-              (key_value
-                (identifier)
-                (string)))
-            (trait_argument
-              (key_value
-                (identifier)
-                (string
-                  (field_placeholder))))
-            (trait_argument
-              (key_value
-                (identifier)
-                (field_reference
-                  (field_name)
-                  (field_name)))))))
-      (operation_declaration
-        (identifier)
-        (identifier)
-        (named_type
-          (type_identifier))
-        (named_type
-          (type_identifier))
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
-              (key_value
-                (identifier)
-                (string)))
-            (trait_argument
-              (key_value
-                (identifier)
-                (string)))
-            (trait_argument
-              (key_value
-                (identifier)
-                (field_reference
-                  (field_name)
-                  (field_name))))))))))
-
-================================================================================
-The assembled request bound to a trait argument through a library call
-================================================================================
-
-pub struct client {
-  endpoint: string @env("ENDPOINT")
-
-  @http(method: "POST", path: "/notes", endpoint: .endpoint)
-  @body(.payload)
-  @header("Authorization", auth.sign(.request))
-  op publish(payload: note): ack
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (struct_declaration
-    (visibility)
-    (identifier)
-    (struct_body
-      (member
-        (identifier)
-        (primitive_type)
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
-              (string)))))
-      (operation_declaration
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
-              (key_value
-                (identifier)
-                (string)))
-            (trait_argument
-              (key_value
-                (identifier)
-                (string)))
-            (trait_argument
-              (key_value
-                (identifier)
-                (field_reference
-                  (field_name))))))
-        (trait
-          (trait_name)
-          (trait_arguments
-            (trait_argument
+                (field_name))
               (field_reference
-                (field_name)))))
+                (field_name))))))
+      (operation_declaration
         (trait
           (trait_name)
           (trait_arguments
@@ -939,240 +557,14 @@ pub struct client {
         (named_type
           (type_identifier))
         (named_type
-          (type_identifier))))))
-
-================================================================================
-Stubbing a library function and a handle method in a declared test
-================================================================================
-
-test "the config from the library becomes the endpoint" {
-  stub configlib.load: app_config { endpoint: "https://x.test", token: "t0" }
-  stub bus.connect: bus.publisher {}
-  stub bus.publisher.send: overloaded { message: "shedding" }
-  c: client { region: "us-east" }
-  got: c.publish(note { id: "n1", body: "oi" })
-  expect got: overloaded { message: "shedding" }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (test_declaration
-    (string)
-    (test_body
-      (stub_declaration
-        (stub_target
-          (library_name)
-          (identifier))
-        (constructor_expression
-          (type_identifier)
-          (constructor_body
-            (constructor_field
-              (identifier)
-              (string))
-            (constructor_field
-              (identifier)
-              (string)))))
-      (stub_declaration
-        (stub_target
-          (library_name)
-          (identifier))
-        (constructor_expression
-          (qualified_type
-            (module_qualifier)
-            (type_identifier))
-          (constructor_body)))
-      (stub_declaration
-        (stub_target
-          (identifier)
-          (identifier)
-          (identifier))
-        (constructor_expression
-          (type_identifier)
-          (constructor_body
-            (constructor_field
-              (identifier)
-              (string)))))
-      (test_binding
-        (identifier)
-        (constructor_expression
-          (type_identifier)
-          (constructor_body
-            (constructor_field
-              (identifier)
-              (string)))))
-      (test_binding
-        (identifier)
-        (call_expression
-          (identifier)
-          (identifier)
-          (call_arguments
-            (constructor_expression
-              (type_identifier)
-              (constructor_body
-                (constructor_field
-                  (identifier)
-                  (string))
-                (constructor_field
-                  (identifier)
-                  (string)))))))
-      (expect_declaration
-        (identifier)
-        (constructor_pattern
-          (type_identifier)
-          (constructor_pattern_body
-            (field_pattern
-              (identifier)
-              (string))))))))
-
-================================================================================
-The legacy ext kind form still parses next to a library block
-================================================================================
-
-ext impl save_note {
-  go: "ext/go/notes.go#StoreSave"
-}
-
-ext notes {
-  go: "github.com/example/notes"
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (extension_declaration
-    (extension_kind)
-    (identifier)
-    (extension_body
-      (extension_binding
-        (identifier)
-        (string))))
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string)))))
-
-================================================================================
-Opaque handle type declared as an interface
-================================================================================
-
-ext calckit {
-  go: "github.com/example/calckit"
-
-  type meter("Meter", float) interface {
-    extern read(): float {
-      go { call: "Read"() ctx }
-    }
-  }
-
-  type gauge interface {
-    extern level(): float {
-      go { call: "Level"() }
-    }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_instance
-          (string)
-          (primitive_type))
-        (foreign_type_shape)
-        (opaque_type_body
-          (extern_declaration
-            (identifier)
-            (extern_parameters)
-            (primitive_type)
-            (extern_body
-              (extern_language_block
-                (language_name)
-                (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments))
-                (ctx_marker))))))
-      (opaque_type
-        (foreign_type_name)
-        (foreign_type_shape)
-        (opaque_type_body
-          (extern_declaration
-            (identifier)
-            (extern_parameters)
-            (primitive_type)
-            (extern_body
-              (extern_language_block
-                (language_name)
-                (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments))))))))))
-
-================================================================================
-Class reference as a call argument
-================================================================================
-
-ext mathkit {
-  ts: "@tono-ext-fixture/mathkit"
-
-  type answer_calculator {
-    extern compute(): float {
-      ts { call: "compute"() sync }
-    }
-  }
-
-  extern make(): answer_calculator {
-    ts { call: "instantiate"(type answer_calculator, "Pick"(type answer_calculator)) sync }
-  }
-}
-
---------------------------------------------------------------------------------
-
-(source_file
-  (library_declaration
-    (library_name)
-    (library_body
-      (library_path
-        (language_name)
-        (string))
-      (opaque_type
-        (foreign_type_name)
-        (opaque_type_body
-          (extern_declaration
-            (identifier)
-            (extern_parameters)
-            (primitive_type)
-            (extern_body
-              (extern_language_block
-                (language_name)
-                (call_binding
-                  (foreign_symbol)
-                  (library_call_arguments))
-                (sync_marker))))))
-      (extern_declaration
-        (identifier)
-        (extern_parameters)
-        (named_type
           (type_identifier))
-        (extern_body
-          (extern_language_block
-            (language_name)
-            (call_binding
-              (foreign_symbol)
-              (library_call_arguments
-                (class_reference
-                  (foreign_type_name))
-                (nested_call
-                  (foreign_symbol)
-                  (library_call_arguments
-                    (class_reference
-                      (foreign_type_name))))))
-            (sync_marker)))))))
+        (operation_impl
+          (handle_method_call
+            (field_reference
+              (field_name)
+              (field_name))
+            (library_call_arguments
+              (string)
+              (field_reference
+                (field_name)
+                (field_name)))))))))

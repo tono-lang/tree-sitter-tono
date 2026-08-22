@@ -382,6 +382,21 @@ export default grammar({
 
     visibility: ($) => 'pub',
 
+    // spelling ::= "#(" raw ")" — a foreign spelling, emitted verbatim by
+    // the target and never text: the callee of a call: line, a storage
+    // type, a sentinel, a field source. The region runs to the parenthesis
+    // that closes the opening one, counting nesting (#(Error()) has a pair
+    // inside), so the content is pieces of non-parenthesis text around
+    // balanced groups.
+    foreign_spelling: ($) =>
+      seq('#(', repeat($._spelling_piece), ')'),
+
+    _spelling_piece: ($) =>
+      choice(
+        alias(/[^()\s][^()]*/, $.spelling_text),
+        seq('(', repeat($._spelling_piece), ')'),
+      ),
+
     // generics ::= "[" name ("," name)* "]"
     type_parameters: ($) =>
       seq('[', commaSep1(alias($.identifier, $.type_parameter)), ']'),
@@ -392,11 +407,19 @@ export default grammar({
     // to match the hand-written parser, which skips commas in a shape body.
     // A struct that declares operations in its body is an entry: the role comes
     // from the content, not from a keyword.
+    // An error struct also carries language blocks ("go { #(ErrParse) ... }"):
+    // how each target recognizes the foreign error and where each field
+    // comes from.
     struct_body: ($) =>
       seq(
         '{',
         repeat(
-          choice($.member, alias($._entry_operation, $.operation_declaration), ','),
+          choice(
+            $.member,
+            $.language_block,
+            alias($._entry_operation, $.operation_declaration),
+            ',',
+          ),
         ),
         '}',
       ),
