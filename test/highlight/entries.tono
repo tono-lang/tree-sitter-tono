@@ -35,21 +35,20 @@ pub struct client {
 //        ^ character.special
   }
 
-  settings: config
-    @bind(api_key, .api_key)
-//   ^ attribute
-//                 ^ punctuation.delimiter
-//                  ^ property
+  settings: config @bind(api_key, .api_key)
+//                  ^ attribute
+//                                ^ punctuation.delimiter
+//                                 ^ property
 
+  @http(method: "GET", path: "/notes/{id}", endpoint: .endpoint)
+// ^ attribute
+//      ^ property
+//                                   ^ string.special
+//                                                     ^ property
   op fetch_note(note_ref): note
 //^ keyword
 //   ^ function
 //              ^ type
-    @http(method: "GET", path: "/notes/{id}", endpoint: .endpoint)
-//   ^ attribute
-//        ^ property
-//                                     ^ string.special
-//                                                       ^ property
 }
 
 ext impl client.fetch_note raw {

@@ -142,6 +142,12 @@ Declarations: `struct`, `enum`, `union`, `op`, and `ext`, each optionally `pub`
 and preceded by traits (`@name(args)`). Structs and unions may carry generic type
 parameters.
 
+Traits follow layout: a trait on a line of its own belongs to the declaration,
+member, case, or variant after it (at the top level and inside a body alike); a
+trait continuing a line belongs to that line. The external scanner in
+`src/scanner.c` reads `@` as one of two tokens so the grammar can tell the two
+apart, since whitespace is otherwise insignificant.
+
 Types cover primitives, named and generic types, cross-module references
 (`module.Name`), lists (`[]T`), maps (`map[K]V`), and nullables (`T?`).
 
