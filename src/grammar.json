@@ -3904,6 +3904,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "spelled_literal"
+        },
+        {
+          "type": "SYMBOL",
           "name": "foreign_spelling"
         },
         {
@@ -3951,6 +3955,31 @@
             },
             "named": true,
             "value": "parameter_name"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": ":"
+        },
+        {
+          "type": "FIELD",
+          "name": "spelling",
+          "content": {
+            "type": "SYMBOL",
+            "name": "foreign_spelling"
+          }
+        }
+      ]
+    },
+    "spelled_literal": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "literal",
+          "content": {
+            "type": "SYMBOL",
+            "name": "struct_literal"
           }
         },
         {
