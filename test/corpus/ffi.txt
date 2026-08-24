@@ -630,3 +630,58 @@ pub struct client {
               (field_reference
                 (field_name)
                 (field_name)))))))))
+
+================================================================================
+A method chained on the returned object in a call: line
+================================================================================
+
+ext keystore {
+  go { #(tono-ext-fixture/keystore) }
+
+  struct connection {
+    go { #(*Client) }
+
+    op get(key: string): string {
+      go { call: #(Get)(#(ctx context.Context), key).#(Result)() }
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (language_block
+        (language_name)
+        (foreign_spelling
+          (spelling_text)))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (language_block
+            (language_name)
+            (foreign_spelling
+              (spelling_text)))
+          (extern_declaration
+            (identifier)
+            (extern_parameters
+              (extern_parameter
+                (identifier)
+                (primitive_type)))
+            (primitive_type)
+            (extern_body
+              (extern_language_block
+                (language_name)
+                (call_binding
+                  (foreign_spelling
+                    (spelling_text))
+                  (library_call_arguments
+                    (foreign_spelling
+                      (spelling_text))
+                    (parameter_name))
+                  (chained_call
+                    (foreign_spelling
+                      (spelling_text))
+                    (library_call_arguments)))))))))))

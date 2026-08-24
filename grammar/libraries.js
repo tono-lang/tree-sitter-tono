@@ -139,15 +139,28 @@ export const libraryRules = {
       '}',
     ),
 
-  // call ::= "call" ":" spelling "(" call_arg,* ")"
+  // call ::= "call" ":" spelling "(" call_arg,* ")" ("." chained_call)?
   // The callee is one foreign spelling, verbatim: a function, a generic
   // instantiation (#(FromConstant[float64])), a class under new
   // (#(new ConstantCalculator)), a static method on a type
-  // (#(FormulaCalculator::parse)).
+  // (#(FormulaCalculator::parse)). An optional "." after the arguments
+  // chains one method on the returned object (#(Get)(key).#(Result)()):
+  // the value comes from that method, not from the call itself. One link,
+  // always a call; a longer chain or a field of the returned object is
+  // not a call: line.
   call_binding: ($) =>
     seq(
       'call',
       ':',
+      field('symbol', $.foreign_spelling),
+      field('arguments', $.library_call_arguments),
+      optional(seq('.', field('chain', $.chained_call))),
+    ),
+
+  // chained_call ::= spelling "(" call_arg,* ")" -- the method called on
+  // the object the call returned, with its own argument list.
+  chained_call: ($) =>
+    seq(
       field('symbol', $.foreign_spelling),
       field('arguments', $.library_call_arguments),
     ),

@@ -128,6 +128,16 @@
           }
         ]
       },
+      "chain": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "chained_call",
+            "named": true
+          }
+        ]
+      },
       "symbol": {
         "multiple": false,
         "required": true,
@@ -170,6 +180,32 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "chained_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "library_call_arguments",
+            "named": true
+          }
+        ]
+      },
+      "symbol": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "foreign_spelling",
             "named": true
           }
         ]
