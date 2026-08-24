@@ -41,6 +41,10 @@
           "named": true
         },
         {
+          "type": "spelled_literal",
+          "named": true
+        },
+        {
           "type": "spelled_parameter",
           "named": true
         },
@@ -1327,6 +1331,10 @@
           "named": true
         },
         {
+          "type": "spelled_literal",
+          "named": true
+        },
+        {
           "type": "spelled_parameter",
           "named": true
         },
@@ -2298,6 +2306,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "spelled_literal",
+    "named": true,
+    "fields": {
+      "literal": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "struct_literal",
+            "named": true
+          }
+        ]
+      },
+      "spelling": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "foreign_spelling",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

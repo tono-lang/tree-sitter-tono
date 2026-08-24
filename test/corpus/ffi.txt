@@ -376,6 +376,68 @@ ext mathkit {
                 (parameter_name)))))))))
 
 ================================================================================
+A struct literal under its own foreign spelling
+================================================================================
+
+ext mathkit {
+  go { #(tono-ext-fixture/mathkit) }
+
+  struct options {
+    Addr: string
+    go { #(Options) }
+  }
+
+  op connect(addr: string): session {
+    go { call: #(Connect)(options { Addr: addr }: #(&Options)) }
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (library_declaration
+    (library_name)
+    (library_body
+      (language_block
+        (language_name)
+        (foreign_spelling
+          (spelling_text)))
+      (foreign_struct
+        (foreign_type_name)
+        (foreign_struct_body
+          (foreign_field
+            (foreign_field_name)
+            (primitive_type))
+          (language_block
+            (language_name)
+            (foreign_spelling
+              (spelling_text)))))
+      (extern_declaration
+        (identifier)
+        (extern_parameters
+          (extern_parameter
+            (identifier)
+            (primitive_type)))
+        (named_type
+          (type_identifier))
+        (extern_body
+          (extern_language_block
+            (language_name)
+            (call_binding
+              (foreign_spelling
+                (spelling_text))
+              (library_call_arguments
+                (spelled_literal
+                  (struct_literal
+                    (type_identifier)
+                    (struct_literal_body
+                      (struct_literal_field
+                        (identifier)
+                        (identifier))))
+                  (foreign_spelling
+                    (spelling_text)))))))))))
+
+================================================================================
 Error struct with language blocks, and a yields position under a foreign spelling
 ================================================================================
 

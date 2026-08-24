@@ -207,6 +207,7 @@ export const libraryRules = {
 
   // call_arg ::= ref | literal | name | name ":" spelling | spelling
   //            | spelling "(" call_arg,* ")" | name "{" field ":" value,* "}"
+  //            | name "{" field ":" value,* "}" ":" spelling
   //            | "[" call_arg,* "]"
   // A bare name is the caller's own parameter (or, in a call: line, a
   // declared handle passed as a class reference; the checker tells them
@@ -215,13 +216,17 @@ export const libraryRules = {
   // a bare spelling is a position the target binds itself
   // (#(ctx context.Context)); a spelling immediately followed by "(" is a
   // nested foreign call (#(WithPrecision)(precision)); the struct literal
-  // maps the arguments into a foreign form (the counterpart of "returns:");
-  // a "[" ... "]" list feeds a collection parameter at its call site.
+  // maps the arguments into a foreign form (the counterpart of "returns:"),
+  // and takes the same ": #(...)" annotation a parameter does when the
+  // literal crosses under a spelling of its own (opts { .. }: #(&Options),
+  // a library that takes the form by pointer); a "[" ... "]" list feeds a
+  // collection parameter at its call site.
   _call_argument: ($) =>
     choice(
       $.field_reference,
       $.nested_call,
       $.spelled_parameter,
+      $.spelled_literal,
       $.foreign_spelling,
       $.call_argument_list,
       $.string,
@@ -234,6 +239,13 @@ export const libraryRules = {
   spelled_parameter: ($) =>
     seq(
       field('name', alias($.identifier, $.parameter_name)),
+      ':',
+      field('spelling', $.foreign_spelling),
+    ),
+
+  spelled_literal: ($) =>
+    seq(
+      field('literal', $.struct_literal),
       ':',
       field('spelling', $.foreign_spelling),
     ),
