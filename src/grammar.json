@@ -3200,12 +3200,20 @@
           "value": "{"
         },
         {
-          "type": "FIELD",
-          "name": "head",
-          "content": {
-            "type": "SYMBOL",
-            "name": "foreign_spelling"
-          }
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "head",
+              "content": {
+                "type": "SYMBOL",
+                "name": "foreign_spelling"
+              }
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         },
         {
           "type": "REPEAT",
