@@ -409,7 +409,8 @@ export default grammar({
     // from the content, not from a keyword.
     // An error struct also carries language blocks ("go { #(ErrParse) ... }"):
     // how each target recognizes the foreign error and where each field
-    // comes from.
+    // comes from. A wire struct carries a headless one ("go { scale:
+    // #(env:"SCALE") }"): the Go struct tag each field declares.
     struct_body: ($) =>
       seq(
         '{',

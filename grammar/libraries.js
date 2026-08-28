@@ -47,17 +47,20 @@ export const libraryRules = {
       '}',
     ),
 
-  // lang_block ::= lang "{" spelling (name ":" spelling)* "}"
+  // lang_block ::= lang "{" spelling? (name ":" spelling)* "}"
   // The first element is positional and names the foreign thing; what it is
   // depends on where the block sits: the module path in the ext header, the
   // foreign type of a foreign form, the whole storage type of an opaque
-  // handle, the sentinel (or error type) of an error struct. The keyed
-  // entries name a tono field and give its foreign spelling.
+  // handle, the sentinel (or error type) of an error struct. A wire struct's
+  // block has no head (nothing foreign to name): its keyed entries are the
+  // target's per-field declaration, a Go struct tag. The keyed entries name
+  // a tono field and give its foreign spelling. Where a head is required is
+  // the checker's rule; the grammar takes both shapes.
   language_block: ($) =>
     seq(
       field('language', alias($.identifier, $.language_name)),
       '{',
-      field('head', $.foreign_spelling),
+      optional(field('head', $.foreign_spelling)),
       repeat(choice($.language_block_field, ',')),
       '}',
     ),

@@ -196,3 +196,40 @@ pub struct charge {
               (key_value
                 (identifier)
                 (integer)))))))))
+
+================================================================================
+A wire struct's go block declares struct tags and has no head
+================================================================================
+
+struct calibration {
+  scale: float
+  offset: float
+
+  go {
+    scale: #(env:"CALC_{profile}_SCALE")
+    offset: #(env:"CALC_{profile}_OFFSET")
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (struct_declaration
+    (identifier)
+    (struct_body
+      (member
+        (identifier)
+        (primitive_type))
+      (member
+        (identifier)
+        (primitive_type))
+      (language_block
+        (language_name)
+        (language_block_field
+          (foreign_field_name)
+          (foreign_spelling
+            (spelling_text)))
+        (language_block_field
+          (foreign_field_name)
+          (foreign_spelling
+            (spelling_text)))))))
